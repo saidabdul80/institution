@@ -1,0 +1,21 @@
+* text=auto
+
+*.blade.php diff=html
+*.css diff=css
+*.html diff=html
+*.md diff=markdown
+*.php diff=php
+node_modules
+/node_modules
+/.github export-ignore
+CHANGELOG.md export-ignore
+.styleci.yml export-ignore
+/node_modules
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+/Modules/Application/node_modules
+/Modules/Application/node_modules
+/Modules/Student/node_modules
+/Modules/Staff/node_modules
