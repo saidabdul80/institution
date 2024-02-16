@@ -4,19 +4,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Passport Guard
-    |--------------------------------------------------------------------------
-    |
-    | Here you may specify which authentication guard Passport will use when
-    | authenticating users. This value should correspond with one of your
-    | guards that is already present in your "auth" configuration file.
-    |
-    */
-
-    'guard' => 'web',
-
-    /*
-    |--------------------------------------------------------------------------
     | Encryption Keys
     |--------------------------------------------------------------------------
     |
@@ -26,9 +13,12 @@ return [
     |
     */
 
-    'private_key' => env('PASSPORT_PRIVATE_KEY'),
+    //'private_key' => env('PASSPORT_PRIVATE_KEY'),
+    'private_key' => storage_path('oauth-private.key'),
 
-    'public_key' => env('PASSPORT_PUBLIC_KEY'),
+//    'public_key' => env('PASSPORT_PUBLIC_KEY'),
+'public_key' => storage_path('oauth-public.key'),
+
 
     /*
     |--------------------------------------------------------------------------
@@ -40,7 +30,9 @@ return [
     | --uuids switch, this will be set to "true" and UUIDs will be used.
     |
     */
-    
+
+    'client_uuids' => false,
+
     /*
     |--------------------------------------------------------------------------
     | Personal Access Client
@@ -57,6 +49,17 @@ return [
         'secret' => env('PASSPORT_PERSONAL_ACCESS_CLIENT_SECRET'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Passport Storage Driver
+    |--------------------------------------------------------------------------
+    |
+    | This configuration value allows you to customize the storage options
+    | for Passport, such as the database connection that should be used
+    | by Passport's internal database models which store tokens, etc.
+    |
+    */
+
     'storage' => [
         'database' => [
             'connection' => null,
@@ -64,7 +67,6 @@ return [
     ],
 
     'key_path' => env('OAUTH_KEY_PATH', 'storage'),
-
-    'client_uuids' => false,
+    
 
 ];

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Tenant;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Storage;
 
 class TenantController extends Controller
 {
@@ -50,6 +51,7 @@ class TenantController extends Controller
                     '--class' => 'DatabaseSeeder',
                 ]);               
             });
+            $this->generateTenantKeys($tenant);
             return new APIResource('Tenant created successfully', false, 200);
         } catch (\Exception $e) {            
             return $e;
@@ -61,4 +63,41 @@ class TenantController extends Controller
 
         return response()->json(['message' => 'Tenant created successfully'], 200);
     }
+ 
+
+    protected function generateTenantKeys(Tenant $tenant)
+    {
+        // Specify the source paths
+        $sourcePathPublic = __DIR__ . '/../../../storage/oauth-public.key';
+        $sourcePathPrivate = __DIR__ . '/../../../storage/oauth-private.key';
+
+        // Specify the destination directory
+        $destinationDirectory = __DIR__ . '/../../../storage/' . $tenant->id;
+
+        // Create the destination directory if it doesn't exist
+        if (!is_dir($destinationDirectory)) {
+            mkdir($destinationDirectory, 0755, true);
+        }
+
+        // Specify the destination paths
+        $destinationPathPublic = $destinationDirectory . '/oauth-public.key';
+        $destinationPathPrivate = $destinationDirectory . '/oauth-private.key';
+
+        // Copy the keys to the tenant's directory
+        copy($sourcePathPublic, $destinationPathPublic);
+   /*      if (file_exists($sourcePathPublic)) {
+        } else {
+            // Handle the case where the source public key doesn't exist
+            // (throw an exception, log an error, etc.)
+        } */
+        copy($sourcePathPrivate, $destinationPathPrivate);
+/* 
+        if (file_exists($sourcePathPrivate)) {
+        } else {
+
+            // Handle the case where the source private key doesn't exist
+            // (throw an exception, log an error, etc.)
+        } */
+    }
+
 }

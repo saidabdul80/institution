@@ -148,6 +148,7 @@ use Throwable;
 
     public function find($id)
     {
+     
         return $this->applicant::with(['qualifications'=>function($query){
             $query->with('qualification');
         }])->where('id',$id)->first();
@@ -155,8 +156,7 @@ use Throwable;
 
     public function update($data, $id=null)
     {
-        if(is_null($id)){
-            $id = $data['id'];
+        if(isset($data['id'])){            
             unset($data['id']);
         }
 
@@ -171,8 +171,8 @@ use Throwable;
         if(array_key_exists("entrance_exam_status", $data)){
             unset($data["entrance_exam_status"]);
         }
-
         $applicant = $this->applicant::find($id);
+        
 
         if($applicant->admission_status == "admitted"){
             //reject change of programme if admitted
@@ -183,8 +183,8 @@ use Throwable;
                 unset($data["applied_programme_id"]);
             }
         }
-
         $user = $this->applicant->where('id',$id)->update($data);
+        
         if($user){
             $user = $this->applicant::find($id);
             $user->application_progress = $this->getApplicationProgress($this->applicant::find($id));

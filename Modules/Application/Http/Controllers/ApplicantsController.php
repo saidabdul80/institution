@@ -2,6 +2,7 @@
 
 namespace Modules\Application\Http\Controllers;
 
+use App\Http\Resources\APIResource;
 use App\Jobs\CreateWallet;
 use Error;
 use Exception;
@@ -13,7 +14,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
 use Modules\Application\Services\ApplicantsService;
-use Modules\Application\Transformers\UtilResource;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ApplicantRegister;
 use App\Models\Applicant;
@@ -21,7 +21,7 @@ use App\Models\Wallet;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Services\Utilities;
-
+use Firebase\JWT\JWT;
 class ApplicantsController extends Controller
 {
 
@@ -39,13 +39,14 @@ class ApplicantsController extends Controller
         
         try{
              $request->validate([
-                'email' => 'required',
+                'email' =>  'required|email|unique:applicants,email',
                 'first_name' => 'required',
                 'surname' => 'required',                                
                 'session_id' => 'required',                
                 "applied_programme_id" => 'required',                
                 "mode_of_entry_id" => 'required',                                                                
             ]);
+
             $applicant = $this->applicantService->createApplicant($request);
             
             $accessToken = $applicant->createToken("AuthToken")->accessToken;
@@ -53,14 +54,15 @@ class ApplicantsController extends Controller
 
                 Mail::to($applicant->email)->queue(new ApplicantRegister($applicant));
             }catch(\Exception $e){
-                
+
             }
-            return new UtilResource(["applicant" => $applicant, "accessToken" => $accessToken], false, 200 );
-        }catch(ValidationException $e){
-            return new UtilResource($e->errors(), true, 400 );
+            
+            return new APIResource(["applicant" => $applicant, "accessToken" => $accessToken], false, 200 );
+        }catch(ValidationException $e){            
+            return new APIResource( formatError(formatError($e->errors())), true, 400 );
         }catch(\Exception $e){
             return $e;
-            return new UtilResource($e->getMessage(), true, $e->getCode() );
+            return new APIResource($e->getMessage(), true, 400);
         }
 
 
@@ -68,20 +70,21 @@ class ApplicantsController extends Controller
 
 
     public function updateApplicant(Request $request)
-    {
-
-        try{
+    {       
+               
+        try{    
+            
 
             Validator::make($request->all(), [
                 'id' => 'required'
             ]);
 
             $applicant = $this->applicantService->updateApplicant($request);
-            return new UtilResource($applicant, false, 200 );
+            return new APIResource($applicant, false, 200 );
         }catch(ValidationException $e){
-            return new UtilResource($e->errors(), true, 400 );
+            return new APIResource(formatError($e->errors()), true, 400 );
         }catch(\Exception $e){
-            return new UtilResource($e->getMessage(), true, $e->getCode() );
+            return new APIResource($e->getMessage(), true, 400 );
         }
 
     }
@@ -113,21 +116,9 @@ class ApplicantsController extends Controller
 
             //query the database to check username
             $applicant = $this->applicantService->attempt($request);
-
+            
             if (!$applicant) {
                 throw new \Exception("Incorrect credentials", 404);
-            }
-
-            if(empty($applicant->wallet_number)){
-                $wallet_number =  generateWalletNumber();
-                if(Wallet::where('wallet_number',$wallet_number)->exists()){
-                    $wallet_number =  generateWalletNumber();
-                }
-                $applicant->wallet_number =$wallet_number;
-                $applicant->save();
-                CreateWallet::dispatch($applicant,$wallet_number);
-            }else if(!DB::connection(config("tespire.central_connection"))->table('wallets')->where('wallet_number',$applicant->wallet_number)->exists()){
-                CreateWallet::dispatch($applicant,$applicant->wallet_number);
             }
 
             $payments = $this->applicantService->applicantInvoiceTypes($applicant->session_id, $applicant);
@@ -150,19 +141,21 @@ class ApplicantsController extends Controller
             $applicant->logged_in_count = $applicant->logged_in_count??0 + 1;
             $applicant->save();
             //generate access token for logged in user
+            //$accessToken = $applicant->login();
             $accessToken = $applicant->createToken("AuthToken")->accessToken;
 
 
             //response structure
-            return new UtilResource(["applicant" => $applicant,"accessToken" => $accessToken ], false, 200);
+            return new APIResource(["applicant" => $applicant,"accessToken" => $accessToken ], false, 200);
 
         } catch (ValidationException $e) {
 
             //catch validation errors and return in response format
-            return new UtilResource($e->errors(), true, 400 );
+            return new APIResource(formatError($e->errors()), true, 400 );
         }catch(Exception $e){            
-            Log::error($e->getMessage());
-            return new UtilResource($e->getMessage(), true, 400 );
+            //Log::error($e->getMessage());
+            return $e;
+            return new APIResource($e->getMessage(), true, 400 );
         }
     }
 
@@ -176,7 +169,7 @@ class ApplicantsController extends Controller
         //delete generated token
         Auth::guard('api:applicantsportal')->user()->tokens()->delete();
         //return response
-        return new UtilResource("you logged out", false, 200);
+        return new APIResource("you logged out", false, 200);
     }
 
 
@@ -192,11 +185,11 @@ class ApplicantsController extends Controller
             ]);
 
             $response = $this->applicantService->applicants($request);
-            return new UtilResource($response, false, 200 );
+            return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new UtilResource($e->errors(), true, 400 );
+            return new APIResource(formatError($e->errors()), true, 400 );
         }catch(Exception $e){
-            return new UtilResource($e->getMessage(), true, 400 );
+            return new APIResource($e->getMessage(), true, 400 );
         }
     }
 
@@ -208,11 +201,11 @@ class ApplicantsController extends Controller
             ]);
             $response = $this->applicantService->byID($request);
 
-            return new UtilResource($response, false, 200 );
+            return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new UtilResource($e->errors(), true, 400 );
+            return new APIResource(formatError($e->errors()), true, 400 );
         }catch(Exception $e){
-            return new UtilResource($e->getMessage(), true, $e->getCode());
+            return new APIResource($e->getMessage(), true, 400);
         }
     }
 
@@ -221,11 +214,11 @@ class ApplicantsController extends Controller
             Validator::make($request->all(), [
                 'file' => 'required',
             ]);
-            return new UtilResource($this->applicantService->uploadThisPicture($request), false, 200);
+            return new APIResource($this->applicantService->uploadThisPicture($request), false, 200);
         } catch (ValidationException $e) {
-            return new UtilResource($e->errors(), true, 400);
+            return new APIResource(formatError($e->errors()), true, 400);
         } catch (Exception $e) {
-            return new UtilResource($e->getMessage(), true, $e->getCode());
+            return new APIResource($e->getMessage(), true, 400);
         }
     }
 
@@ -238,11 +231,11 @@ class ApplicantsController extends Controller
                 'session_id'=>'required'
             ]);
             $response = $this->applicantService->getApplicantOLevelResults($request);
-            return new UtilResource($response, false, 200 );
+            return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new UtilResource($e->errors(), true, 400 );
+            return new APIResource(formatError($e->errors()), true, 400 );
         }catch(Exception $e){
-            return new UtilResource($e->getMessage(), true, 400 );
+            return new APIResource($e->getMessage(), true, 400 );
         }
 
 
@@ -258,11 +251,11 @@ class ApplicantsController extends Controller
             ]);
             $response = $this->applicantService->getApplicantALevelResults($id);
 
-            return new UtilResource($response, false, 200 );
+            return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new UtilResource($e->errors(), true, 400 );
+            return new APIResource(formatError($e->errors()), true, 400 );
         }catch(Exception $e){
-            return new UtilResource($e->getMessage(), true, 400 );
+            return new APIResource($e->getMessage(), true, 400 );
         }
     }
 
@@ -276,11 +269,11 @@ class ApplicantsController extends Controller
             ]);
             $response = $this->applicantService->getApplicantALevelResult($id);
 
-            return new UtilResource($response, false, 200);
+            return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new UtilResource($e->errors(), true, 400);
+            return new APIResource(formatError($e->errors()), true, 400);
         } catch (Exception $e) {
-            return new UtilResource($e->getMessage(), true, 400);
+            return new APIResource($e->getMessage(), true, 400);
         }
     }
 
@@ -300,11 +293,11 @@ class ApplicantsController extends Controller
 
             $response = $this->applicantService->saveOLevelResults($request);
 
-            return new UtilResource($response, false, 200 );
+            return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new UtilResource($e->errors(), true, 400 );
+            return new APIResource(formatError($e->errors()), true, 400 );
         }catch(Exception $e){
-            return new UtilResource($e->getMessage(), true, 400 );
+            return new APIResource($e->getMessage(), true, 400 );
         }
 
     }
@@ -323,11 +316,11 @@ class ApplicantsController extends Controller
 
             $response = $this->applicantService->saveALevel($request);
 
-            return new UtilResource($response, false, 200 );
+            return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new UtilResource($e->errors(), true, 400 );
+            return new APIResource(formatError($e->errors()), true, 400 );
         }catch(Exception $e){
-            return new UtilResource($e->getMessage(), true, 400 );
+            return new APIResource($e->getMessage(), true, 400 );
         }
 
 
@@ -346,11 +339,11 @@ class ApplicantsController extends Controller
 
             $response = $this->applicantService->getApplicantRegistrationProgress($id);
 
-            return new UtilResource($response, false, 200 );
+            return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new UtilResource($e->errors(), true, 400 );
+            return new APIResource(formatError($e->errors()), true, 400 );
         }catch(Exception $e){
-            return new UtilResource($e->getMessage(), true, 400 );
+            return new APIResource($e->getMessage(), true, 400 );
         }
 
     }
@@ -364,11 +357,11 @@ class ApplicantsController extends Controller
             $response = $this->applicantService->applicantPaymentDetails($request, $request->user());
 
 
-            return new UtilResource($response, false, 200 );
+            return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new UtilResource($e->errors(), true, 400 );
+            return new APIResource(formatError($e->errors()), true, 400 );
         }catch(Exception $e){
-            return new UtilResource($e->getMessage(), true, 400 );
+            return new APIResource($e->getMessage(), true, 400 );
         }
     }
 
@@ -376,9 +369,9 @@ class ApplicantsController extends Controller
         try{
             $applicant = auth('api:applicantsportal')->user();
             $response = $applicant->wallet;
-            return new UtilResource($response, false, 200 );
+            return new APIResource($response, false, 200 );
         }catch(Exception $e){
-            return new UtilResource($e->getMessage(), true, 400 );
+            return new APIResource($e->getMessage(), true, 400 );
         }
 
     }

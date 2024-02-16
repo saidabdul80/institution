@@ -31,7 +31,7 @@ class CreateApplicantsTable extends Migration
                 $table->bigInteger('applied_level_id')->nullable()->unsigned();                 
                 $table->bigInteger('level_id')->nullable()->unsigned();                 
                 $table->bigInteger('applied_programme_id')->unsigned();    
-                $table->bigInteger('programme_id')->unsigned();                
+                $table->bigInteger('programme_id')->unsigned()->nullable();                
                 $table->bigInteger('programme_type_id')->unsigned()->nullable();             
                 $table->bigInteger('mode_of_entry_id')->unsigned()->nullable();                 
                 $table->bigInteger('application_status_id')->unsigned()->nullable();                 

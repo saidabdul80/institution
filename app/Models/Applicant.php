@@ -2,18 +2,18 @@
 
 namespace App\Models;
 
-use App\Traits\HasWallet;
+
 use App\Traits\Utils;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\DB;
+//use Illuminate\Support\Facades\DB;
 use EloquentFilter\Filterable;
 
 class Applicant extends Authenticatable
 {
-    use HasApiTokens, HasFactory, SoftDeletes, Utils, HasWallet, Filterable;
+    use HasApiTokens, HasFactory, SoftDeletes, Utils, Filterable;
 
 
     protected $fillable = ['*'];

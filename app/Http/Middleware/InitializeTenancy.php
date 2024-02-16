@@ -26,12 +26,14 @@ class InitializeTenancy extends IdentificationMiddleware
     public function handle($request, Closure $next)
     {
         try {
+            
             if ($request->hasHeader('x-tenant')) {
                 $hostname = $request->header('x-tenant');
                 if ($this->isSubdomain($hostname)) {
-                    $subdomain = $this->makeSubdomain($hostname);                    
+                    $subdomain = $this->makeSubdomain($hostname);                
                     return $this->initializeTenancy($request, $next, $subdomain);
                 } else {
+                        
                     return $this->initializeTenancy($request, $next, $hostname);
                 }
             }

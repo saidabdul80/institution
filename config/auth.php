@@ -41,24 +41,24 @@ return [
             'provider' => 'users',
         ],
 
-        'api:applicants' => [
+        'api-applicants' => [
             'driver' => 'passport',
             'provider' => 'applicants',
         ],
 
-        'api:students' => [
+        'api-students' => [
             'driver' => 'passport',
             'provider' => 'students',
         ],
 
-        'api:staff' => [
+        'api-staff' => [
             'driver' => 'passport',
-            'provider' => 'staff',
+            'provider' => 'staffs',
         ],
 
-        'api:control' => [
+        'api-control' => [
             'driver' => 'passport',
-            'provider' => 'admin',
+            'provider' => 'admins',
         ],      
     ],
 
@@ -96,15 +96,17 @@ return [
             'model' => App\Models\Student::class,
         ],
 
-        'staff' => [
+        'staffs' => [
             'driver' => 'eloquent',
             'model' => App\Models\Staff::class,
         ],
 
-        'admin' => [
-            'driver' => 'eloquent',
-            'model' => Modules\ControlHouseAPI\Entities\Admin::class,
-        ]        
+        /* 
+            'admin' => [
+                'driver' => 'eloquent',
+                'model' => Modules\ControlHouseAPI\Entities\Admin::class,
+            ]       
+        */
     ],
 
 
@@ -123,14 +125,14 @@ return [
     |
     */
 
-    'passwords' => [
-        'users' => [
-            'provider' => 'users',
+  /*   'passwords' => [
+        'applicants' => [
+            'provider' => 'applicants',
             'table' => 'password_resets',
             'expire' => 60,
             'throttle' => 60,
         ],
-    ],
+    ], */
 
     /*
     |--------------------------------------------------------------------------

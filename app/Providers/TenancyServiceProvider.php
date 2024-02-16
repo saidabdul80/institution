@@ -12,7 +12,7 @@ use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Jobs;
 use Stancl\Tenancy\Listeners;
 use Stancl\Tenancy\Middleware;
-
+use Stancl\Tenancy\Features\TenantConfig;
 class TenancyServiceProvider extends ServiceProvider
 {
     // By default, no namespace is used to support the callable array syntax.
@@ -103,6 +103,11 @@ class TenancyServiceProvider extends ServiceProvider
         $this->mapRoutes();
 
         $this->makeTenancyMiddlewareHighestPriority();
+        
+        TenantConfig::$storageToConfigMap = [
+            'passport_public_key' => 'passport.public_key',
+            'passport_private_key' => 'passport.private_key'
+        ];
     }
 
     protected function bootEvents()

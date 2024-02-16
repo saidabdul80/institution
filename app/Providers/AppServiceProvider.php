@@ -2,11 +2,10 @@
 
 namespace App\Providers;
 
+use App\Http\Middleware\InitializeTenancy;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
-use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
-use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -17,7 +16,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        Passport::ignoreRoutes();
+        Passport::routes(null, ['middleware' => [
+            'universal',
+            InitializeTenancy::class
+        ]]);
     }
 
     /**
@@ -27,16 +29,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        Route::group([
-            'as' => 'passport.',
-            'middleware' => [
-                InitializeTenancyByDomain::class, // Use tenancy initialization middleware of your choice
-                PreventAccessFromCentralDomains::class,
-            ],
-            'prefix' => config('passport.path', 'oauth'),
-            'namespace' => 'Laravel\Passport\Http\Controllers',
-        ], function () {
-            $this->loadRoutesFrom(__DIR__ . "/../../vendor/laravel/passport/src/../routes/web.php");
-        });
+        Passport::loadKeysFrom(base_path(config('passport.key_path')));
     }
 }

@@ -95,17 +95,15 @@ class ApplicantsService{
     public function updateApplicant($request){
 
         $email = $request->get('email');
-        $id = $request->get('id');
-
+        $id = $request->user()?->id;
+        
         //$checkUser = $this->applicantRepository->checkEmailExist($email, $id);
-        $existData = $this->applicantRepository->find($id);
-        if(!$existData){
-            throw new Exception("Applicant Not Found",404);
-        }
+             
         /* if($checkUser){
             throw new Exception("This email is already in use",409);
         } */
-        return $this->applicantRepository->update($request->all());
+        
+        return $this->applicantRepository->update($request->all(), $id);
 
     }
 

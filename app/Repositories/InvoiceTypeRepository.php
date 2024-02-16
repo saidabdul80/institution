@@ -52,12 +52,13 @@ class InvoiceTypeRepository
         return $filteredInvoiceTypes;
     }
 
-    public function  getPaymentDetails($owner,$session_id = null){
+    public function  getPaymentDetails($session_id = null, $owner=null){
         
         $session_id = $session_id?? $owner->session_id;
         $semester_id = (int) DB::table('configurations')->where('name','current_semester')->first()?->value;              
+        
         $query = [
-            "gender" => $owner->gender,
+            "gender" => $owner?->gender,
             "owner_type" => $owner->user_type,
             "programme_id" => $owner->programme_id ?? $owner->applied_programme_id,
             "programme_type_id" => $owner->programme_type_id,

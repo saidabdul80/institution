@@ -13,6 +13,10 @@ function generateJTR(){
     return $number;
 }
 
+function formatError($errors){
+    return collect($errors)->first();
+}
+
 /**
  * Validate an array of data against a set of data type rules.
  *

@@ -26,14 +26,13 @@ Route::prefix('applicants')->middleware('tenancy')->group(function() {
     
     Route::get('/login', function() {
         return ["message" => "You must be logged in to do that!"];
-    })->name('applicant.login');
+    })->name('login');
 
-
-    Route::group(["middleware" => ['auth:api:applicant']], function () {
-
-        Route::post('/logout', [ApplicantsController::class, 'logout']);
-
+    
+    Route::group(["middleware" => ['auth:api-applicants']], function () {
             Route::post('/update', [ApplicantsController::class, 'updateApplicant']);
+            Route::post('/logout', [ApplicantsController::class, 'logout']);
+
             Route::post('/uploadPicture', [ApplicantsController::class, 'uploadPicture']);
             Route::post('/applicants', [ApplicantsController::class, 'getApplicants']);
 
@@ -54,15 +53,15 @@ Route::prefix('applicants')->middleware('tenancy')->group(function() {
             Route::post('/initiate_payment', [CentralPaymentController::class, 'initiatePayment']);
             Route::post('/requery/{payment_reference?}', [CentralPaymentController::class, 'requery']);        
 
-    Route::group(["prefix"=>"payments"], function () {
-        Route::post('/pay', [CentralPaymentController::class, 'pay']);
-        Route::post('/distinct_payment_details', [PaymentController::class, 'distinct']);
-        Route::post('/all_invoice_types', [PaymentController::class, 'getAllInvoiceTypes']);
-        Route::post('/distinct_payment_details', [PaymentController::class, 'distinct']);
-    });
+            Route::group(["prefix"=>"payments"], function () {
+                Route::post('/pay', [CentralPaymentController::class, 'pay']);
+                Route::post('/distinct_payment_details', [PaymentController::class, 'distinct']);
+                Route::post('/all_invoice_types', [PaymentController::class, 'getAllInvoiceTypes']);
+                Route::post('/distinct_payment_details', [PaymentController::class, 'distinct']);
+            });
 
     });
-    Route::post('/login', 'ApplicantsController@login');
+    Route::post('/login', [ApplicantsController::class, 'login']);
     Route::post('/create', [ApplicantsController::class, 'create']);
 
 });
