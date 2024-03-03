@@ -15,7 +15,7 @@ class ProgrammeService extends Utilities{
 
         $this->programmeRepository = $programmeRepository;
         $this->utility = $utilities;
-        //$this->user_id = auth('api:staffportal')->id();
+        //$this->user_id = auth('api-staff')->id();
     }
 
 

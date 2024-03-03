@@ -9,6 +9,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Department extends Model
 {
     use HasFactory, SoftDeletes;
+    protected $fillable = [
+        'faculty_id',
+        'name',
+        'abbr',
+        'deleted_at'
+    ];
     public function getFacultyAttribute()
     {
         $faculty = Faculty::find($this->faculty_id);

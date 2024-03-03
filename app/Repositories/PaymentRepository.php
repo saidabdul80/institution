@@ -20,21 +20,24 @@ class PaymentRepository
 
     public function getByRef($ref)
     {
-        return $this->payment->where('payment_reference', $ref)->orWhere('jtr', $ref)->first();
+        return $this->payment->where('payment_reference', $ref)->orWhere('ourTrxRef', $ref)->first();
     }
 
     public function createPayment($paymentDetails)
     {
-        return $this->payment->create([
+
+        $response = $this->payment->create([
             "amount" => $paymentDetails['amount'],
+            "invoice_id"=>$paymentDetails['invoice_id'],
             "payment_reference" => $paymentDetails['payment_reference'] ?? null,
             "owner_id" => $paymentDetails['owner_id'],
             "owner_type" => $paymentDetails['owner_type'],
             "session_id" => $paymentDetails['session_id'],
-            "jtr" => $paymentDetails['jtr'],
+            "ourTrxRef" => $paymentDetails['ourTrxRef'],
             "payment_mode" => $paymentDetails['payment_mode'],
             "charges" => $paymentDetails['charges'] ?? 0,
         ]);
+        return $response;        
     }
 
     public function updatePaymentWithRRR($rrr, array $newDetails)
@@ -42,9 +45,9 @@ class PaymentRepository
         return $this->payment->where("payment_reference", $rrr)->update($newDetails);
     }
 
-    public function updatePaymentWithFlutterwave($jtr, array $newDetails)
+    public function updatePaymentWithFlutterwave($ourTrxRef, array $newDetails)
     {
-        return $this->payment->where("jtr", $jtr)->update($newDetails);
+        return $this->payment->where("ourTrxRef", $ourTrxRef)->update($newDetails);
     }
 
     public function deletePayment($paymentId)
@@ -70,22 +73,22 @@ class PaymentRepository
 
     public function isPaymentExist($invoice_id)
     {
-        $this->payment->where("invoice_id", $invoice_id)->where("status", "!=", "paid")->exists();
+        $this->payment->where("invoice_id", $invoice_id)->where("status", "!=", "successful")->exists();
     }
 
     public function isPaymentComplete($invoice_id)
     {
-        $this->payment->where("invoice_id", $invoice_id)->where("status", "paid")->exists();
+        return $this->payment->where("invoice_id", $invoice_id)->where("status", "successful")->exists();
     }
 
-    public function getPaymentByJTR($reference)
+    public function getPaymentByourTrxRef($reference)
     {
-        return $this->payment->where("jtr", $reference)->first();
+        return $this->payment->where("ourTrxRef", $reference)->first();
     }
 
-    public function getPaymentByFlutterwave($jtr)
+    public function getPaymentByFlutterwave($ourTrxRef)
     {
-        return $this->payment->where("jtr", $jtr)->first();
+        return $this->payment->where("ourTrxRef", $ourTrxRef)->first();
     }
 
     public function getPaymentsByInvoice($invoice_id)

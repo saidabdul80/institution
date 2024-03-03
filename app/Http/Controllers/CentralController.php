@@ -20,10 +20,16 @@ use Illuminate\Validation\ValidationException;
 use App\Models\ProgrammeType;
 use App\Models\ExamType;
 use App\Models\CertificateType;
+use App\Models\Configuration;
+use App\Models\CourseCategory;
+use App\Models\Department;
 use App\Models\EntryMode;
+use App\Models\Faculty;
 use App\Models\Invoice;
 use App\Models\InvoiceType;
 use App\Models\Payment;
+use App\Models\PaymentCategory;
+use App\Models\Semester;
 use App\Models\Session;
 use App\Models\Student;
 use App\Models\Subject;
@@ -47,8 +53,39 @@ class CentralController extends Controller
         $this->programme    = $programme;
     }
 
+    public function getSchoolInfo(){
+        
+        try {
+            //code...
+            $logo = tenant('logo');
+            $school_name = tenant('school_name');
+            $school_short_name = tenant('school_short');
+            
+            $response = [
+                "course_categories"=>CourseCategory::all(),
+                "payment_types"=> PaymentCategory::all(),
+                "countries"=>Country::all(),
+                "entry_modes"=>EntryMode::all(),
+                "faculties"=>Faculty::all(),
+                "departments"=>Department::all(),
+                "sessions"=>Session::all(),
+                "semesters"=>Semester::all(),
+                "levels"=>Level::all(),
+                "programmes"=>Programme::all(),
+                "programme_types"=>ProgrammeType::all(),
+                "logo" =>$logo,
+                "school_name" =>$school_name,
+                "school_short_name" =>$school_short_name,
+                "configurations"=> Configuration::all()
+            ];
+    
+            return new APIResource($response, false,200);
+        } catch (\Exception $e) {
+            return new APIResource($e, true,400);
+        }
+    }
 
-    function country()
+    public function country()
     {
 
         try {
@@ -302,7 +339,7 @@ class CentralController extends Controller
 
             return new APIResource(["admission_status" => $response->admission_status, "qualification_status" => $response->qualified_status], false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (\Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -321,7 +358,7 @@ class CentralController extends Controller
 
             return new APIResource('Updated Successfully', false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (\Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }

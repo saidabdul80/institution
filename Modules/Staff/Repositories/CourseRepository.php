@@ -98,7 +98,7 @@ class CourseRepository{
     }
 
     public function getData($search=null,  $paginateBy=null){   
-        $paginate = $paginateBy ?? 100;
+        $paginate = $paginateBy ?? 7;
         return $this->course::search($search)->latest()->paginate($paginate);        
     }
 
@@ -134,7 +134,7 @@ class CourseRepository{
     }
     
     public function getCourseCategories(){
-        return $this->courseCategory::where("status","Active")->get();
+        return $this->courseCategory::where("status","Active")->paginate(7);
     }
 
     public function getCourseCategoriesWithInactive(){

@@ -6,7 +6,7 @@ namespace Modules\Staff\Repositories;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Modules\Staff\Entities\Session;
+use App\Models\Session;
 
 class SessionRepository{
 

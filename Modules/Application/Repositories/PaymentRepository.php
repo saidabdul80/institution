@@ -110,6 +110,14 @@ use App\Models\Faculty;
                      }])->get();
     }
 
+    public function applicantInvoicesById($applicant_id)
+    {
+            return $this->invoice::where(['owner_type'=>'applicant', 'owner_id' => $applicant_id])
+                        ->with(['payment', 'invoice_type'=>function($query){
+                                $query->where('owner_type', 'applicant');
+                     }])->get();
+    }
+
     public function applicantPayments($session_id, $applicant_id)
     {
         return $this->payment::where(['session_id' => $session_id, 'owner_id' => $applicant_id, 'owner_type' => 'applicant'])->with('invoice')->latest()->get();

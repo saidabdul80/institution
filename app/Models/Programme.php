@@ -13,7 +13,7 @@ class Programme extends Model
     use HasFactory, SoftDeletes, Searchable;
 
     protected $with = ['programme_options'];
-
+    protected $fillable = ['*'];
     public function getFacultyAttribute() {
         $faculty = Faculty::find($this->faculty_id);
         if(!is_null($faculty)){

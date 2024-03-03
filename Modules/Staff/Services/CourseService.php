@@ -25,7 +25,7 @@ class CourseService extends Utilities{
 //            throw new Exception("Course Name or Abbreviation Name Already Exist",400);
 //        }
         $data = $request->all();
-        $data['updated_by'] = auth('api:staffportal')->id();
+        $data['updated_by'] = auth('api-staff')->id();
 
         $this->courseRepository->update($request->get('course_id'),[
             'code' => $request->get('code'),
@@ -45,7 +45,7 @@ class CourseService extends Utilities{
 //            throw new Exception("Course Code Already Exist",400);
 //        }
         $data = $request->all();
-        $data['created_by'] = auth('api:staffportal')->id();
+        $data['created_by'] = auth('api-staff')->id();
         $response = $this->courseRepository->create($data);
         if($response){
             return 'success';
@@ -72,7 +72,7 @@ class CourseService extends Utilities{
             }else{
 
                 $course['department_id'] =$request->get('department_id');
-                $course["created_by"] = auth('api:staffportal')->id();
+                $course["created_by"] = auth('api-staff')->id();
             }
 
         }

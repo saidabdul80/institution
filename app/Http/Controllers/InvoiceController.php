@@ -34,9 +34,9 @@ class InvoiceController extends Controller
             $invoice = $this->invoiceService->generateInvoice($request, $request->user());
             return new APIResource($invoice, false, 200);
         } catch (ValidationException $e) {
-            return  new APIResource($e->errors(), true, 400);
+            return  new APIResource(array_values($e->errors())[0], true, 400);
         } catch (\Exception $e) {
-            return new APIResource($e->getMessage(), true, $e->getCode());
+            return new APIResource($e->getMessage(), true, 400);
         }
     }   
 }

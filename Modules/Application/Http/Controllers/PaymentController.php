@@ -47,7 +47,7 @@ class PaymentController extends Controller
            $response = $this->paymentsService->processPaymentStoreDetails($request);
            return new UtilResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new UtilResource($e->errors(), true, 400 );
+            return new UtilResource(array_values($e->errors())[0], true, 400 );
         }
 
     }
@@ -63,7 +63,7 @@ class PaymentController extends Controller
             $response = $this->paymentsService->distinctPayments($request);
             return new UtilResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new UtilResource($e->errors(), true, 400 );
+            return new UtilResource(array_values($e->errors())[0], true, 400 );
         }
     }
 
@@ -80,7 +80,7 @@ class PaymentController extends Controller
 
             return new UtilResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new UtilResource($e->errors(), true, 400 );
+            return new UtilResource(array_values($e->errors())[0], true, 400 );
         }catch(\Exception $e){
             return new UtilResource($e->getMessage(), true, 400 );
         }
@@ -99,7 +99,7 @@ class PaymentController extends Controller
 
             return new UtilResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new UtilResource($e->errors(), true, 400 );
+            return new UtilResource(array_values($e->errors())[0], true, 400 );
         }catch(\Exception $e){
             return new UtilResource($e->getMessage(), true, 400 );
         }
@@ -107,18 +107,12 @@ class PaymentController extends Controller
 
     public function getApplicantInvoices(Request $request)
     {
-        try {
-
-            $request->validate([
-                'owner_id' => 'required',
-                'session_id' => 'required',
-            ]);
-
+        try {            
             $response = $this->paymentsService->getApplicantInvoices($request);
 
             return new UtilResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new UtilResource($e->errors(), true, 400);
+            return new UtilResource(array_values($e->errors())[0], true, 400);
         } catch (\Exception $e) {
             return new UtilResource($e->getMessage(), true, 400);
         }
@@ -137,7 +131,7 @@ class PaymentController extends Controller
 
             return new UtilResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new UtilResource($e->errors(), true, 400);
+            return new UtilResource(array_values($e->errors())[0], true, 400);
         } catch (\Exception $e) {
             return new UtilResource($e->getMessage(), true, 400);
         }
@@ -148,7 +142,7 @@ class PaymentController extends Controller
         try {
             return new UtilResource($this->paymentsService->proceedToPay($request->all()), false, 200);
         } catch (ValidationException $e) {
-            return new UtilResource($e->errors(), true, 400);
+            return new UtilResource(array_values($e->errors())[0], true, 400);
         } catch (\Exception $e) {
             return new UtilResource($e->getMessage(), true, 400);
         }
@@ -159,7 +153,7 @@ class PaymentController extends Controller
         try {
             return new UtilResource($this->paymentsService->requery($request->rrr), false, 200);
         } catch (ValidationException $e) {
-            return new UtilResource($e->errors(), true, 400);
+            return new UtilResource(array_values($e->errors())[0], true, 400);
         } catch (\Exception $e) {
             return new UtilResource($e->getMessage(), true, 400);
         }
@@ -170,7 +164,7 @@ class PaymentController extends Controller
         try {
             return new UtilResource($this->paymentsService->paymentWebhook($request->all()), false, 200);
         } catch (ValidationException $e) {
-            return new UtilResource($e->errors(), true, 400);
+            return new UtilResource(array_values($e->errors())[0], true, 400);
         } catch (\Exception $e) {
             return new UtilResource($e->getMessage(), true, 400);
         }

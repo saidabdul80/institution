@@ -1,13 +1,11 @@
 <?php
-
 namespace App\Models;
 
 
-use ApplicantsCertificates;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
-class Alevel extends Model
+class ALevel extends Model
 {
     use HasFactory, SoftDeletes;
 
@@ -16,6 +14,7 @@ class Alevel extends Model
     public function applicant(){
         return $this->belongsTo(Applicant::class);
     }
+    protected $table = 'alevels';
     
     protected static function newFactory()
     {

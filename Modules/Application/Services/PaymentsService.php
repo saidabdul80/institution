@@ -84,7 +84,7 @@ class PaymentsService{
 
     public function getApplicantInvoices($request)
     {
-        return $this->paymentRepository->applicantInvoices($request->get('session_id'), $request->get('owner_id'));
+        return $this->paymentRepository->applicantInvoicesById($request->user()->id);
     }
 
     public function getApplicantPayments($request)

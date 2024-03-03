@@ -168,15 +168,7 @@ class Invoice extends Model
     // {
     //     return $this->paid_at?->format('Y-m-d h:ia');
     // }
-
-    public function getChargesAttribute($value)
-    {
-        if ($this->status != 'paid') {
-            return $this->paymentCharge()?->amount ?? 0.00;
-        }
-        return $value;
-    }
-
+ 
     public function getTotalAmountAttribute($value)
     {
         return $this->amount + $this->charges;                

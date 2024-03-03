@@ -47,6 +47,21 @@ class TenantPaymentCharge extends Model
         }
         return $rate;
     }
+
+    public function resolveCharges($value){
+        if ($this->payment_type == 'percent') {
+            // Calculate the charge based on a percentage of the value
+            return ($this->amount / 100) * $value;
+        } elseif ($this->payment_type == 'local') {
+            // No conversion needed, charge is in local currency
+            return $this->amount;
+        } elseif ($this->payment_type == 'dollar') {
+            // Convert the charge from dollars to local currency using the conversion rate
+            $rate = $this->convert();
+            return ($rate * $this->amount);
+        }
+    
+    }
     
     public function standardCharge(){
         return $this->convert($this->standard_charge);

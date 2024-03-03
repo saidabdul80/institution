@@ -28,7 +28,9 @@ class Staff extends Migration
             $table->bigInteger('faculty_id')->unsigned()->nullable(); 
             $table->bigInteger('department_id')->unsigned()->nullable(); 
             $table->enum('type', ['academic','non-academic'])->default('academic');
-            $table->enum('first_login', ['true','false'])->default('true');            
+            $table->enum('first_login', ['true','false'])->default('true');      
+            $table->dateTime('logged_in_time')->nullable();
+            $table->integer('logged_in_count')->nullable();      
             $table->foreign('department_id')->references('id')->on('departments')->cascadeOnUpdate()->cascadeOnDelete();                            
             $table->foreign('faculty_id')->references('id')->on('faculties')->cascadeOnUpdate()->cascadeOnDelete();                            
             $table->softDeletes();

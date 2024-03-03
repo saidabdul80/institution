@@ -30,6 +30,9 @@ class FacultyRepository{
         $faculty = $this->faculty::find($request->get('id'));
         $faculty->name = $request->get('name');
         $faculty->abbr = $request->get('abbr');
+        if($request->get('status')??'Active' === 'Inactive'){
+            $this->delete($faculty->id);
+        }
         $faculty->save();
         return $faculty;
 

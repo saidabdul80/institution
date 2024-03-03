@@ -15,7 +15,9 @@ return new class extends Migration
     {
         Schema::create('documents', function (Blueprint $table) {
             $table->id();         
-            $table->bigInteger('applicant_id');
+            $table->bigInteger('owner_id');
+            $table->int('document_type_id');
+            $table->enum('owner_type',['applicant','student']);
             $table->string('name');
             $table->string('url',500)->nullable();                        
             $table->timestamps();

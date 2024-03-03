@@ -20,7 +20,7 @@ class ConfigurationService {
 
         $this->configurationRepository = $configurationRepository;
 
-        // $this->user = auth('api:staffportal')->user();
+        // $this->user = auth('api-staff')->user();
 
         $this->role = $role;
 
@@ -92,7 +92,7 @@ class ConfigurationService {
     public function createRole($role_name, $permission_ids){
         if(!$this->role::where('name', $role_name)->exists()){
             $permissions = $this->permission::whereIn('id',$permission_ids)->get();
-            $this->role::create(['name' => $role_name, 'guard_name' =>  "api:staffportal"])->givePermissionTo($permissions);        
+            $this->role::create(['name' => $role_name, 'guard_name' =>  "api-staff"])->givePermissionTo($permissions);        
             return 'success';
         }
         throw new \Exception('Role name already exist');
@@ -144,7 +144,7 @@ class ConfigurationService {
         }
         
         $permissions = collect($permissionsToAdd)->map(function ($permission) {
-            return ['name' => $permission, 'guard_name' =>  "api:staffportal"];
+            return ['name' => $permission, 'guard_name' =>  "api-staff"];
         });
         $role->givePermissionTo($permissions);
         return 'success';
@@ -159,7 +159,7 @@ class ConfigurationService {
         }
         
         $permissions = collect($permissionsToAdd)->map(function ($permission) {
-            return ['name' => $permission, 'guard_name' =>  "api:staffportal"];
+            return ['name' => $permission, 'guard_name' =>  "api-staff"];
         });
         $role->revokePermissionTo($permissions);
         return 'success';

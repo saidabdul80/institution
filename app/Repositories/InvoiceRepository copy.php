@@ -1,5 +1,4 @@
 <?php 
-
 namespace App\Repositories;
 
 use App\Models\Invoice;
@@ -20,7 +19,7 @@ class InvoiceRepository
 
     public function deleteInvoice($invoiceId)
     {
-        $this->invoice->where("id", $invoiceId)->update(["deleted_by" => auth('api:staffportal')->id()]);
+        $this->invoice->where("id", $invoiceId)->update(["deleted_by" => auth('api-staff')->id()]);
         $this->invoice->where("id", $invoiceId)->delete();
     }
 
@@ -66,7 +65,7 @@ class InvoiceRepository
 
     public function confirmPay($invoiceId) 
     {
-        return $this->invoice->where("id", $invoiceId)->update(["status"=>"paid", "confirmed_by" => auth('api:staffportal')->id()]);
+        return $this->invoice->where("id", $invoiceId)->update(["status"=>"paid", "confirmed_by" => auth('api-staff')->id()]);
     }
 
     public function search($invoice_type_id)

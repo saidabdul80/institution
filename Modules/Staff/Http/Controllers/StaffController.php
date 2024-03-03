@@ -68,7 +68,7 @@ class StaffController extends Controller
         } catch (ValidationException $e) {
 
             //catch validation errors and return in response format
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -82,7 +82,7 @@ class StaffController extends Controller
 
     public function logout() {
         //delete generated token
-        Auth::guard('api:staffportal')->user()->tokens()->delete();
+        Auth::guard('api-staff')->user()->tokens()->delete();
         //return response
         return new APIResource("you logged out", false, 200);
     }
@@ -102,7 +102,7 @@ class StaffController extends Controller
 
         }catch(ValidationException $e){
 
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
 
         }catch(Exception $e){
 
@@ -132,7 +132,7 @@ class StaffController extends Controller
 
         }catch(ValidationException $e){
 
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
 
         }catch(Exception $e){
 
@@ -156,7 +156,7 @@ class StaffController extends Controller
             $response = $this->staffService->staffs($request);
             return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -175,7 +175,7 @@ class StaffController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -193,7 +193,7 @@ class StaffController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -211,7 +211,7 @@ class StaffController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -230,7 +230,7 @@ class StaffController extends Controller
 
             return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -247,7 +247,7 @@ class StaffController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -266,7 +266,7 @@ class StaffController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -285,7 +285,7 @@ class StaffController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -320,7 +320,7 @@ class StaffController extends Controller
 
             return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -340,7 +340,7 @@ class StaffController extends Controller
 
             return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -357,7 +357,7 @@ class StaffController extends Controller
 
             return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -371,7 +371,7 @@ class StaffController extends Controller
 
             return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -395,7 +395,7 @@ class StaffController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -416,7 +416,7 @@ class StaffController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -430,7 +430,7 @@ class StaffController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -452,7 +452,7 @@ class StaffController extends Controller
 
             return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -469,7 +469,7 @@ class StaffController extends Controller
 
             return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -522,7 +522,7 @@ class StaffController extends Controller
 
             return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -538,7 +538,7 @@ class StaffController extends Controller
 
             return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }

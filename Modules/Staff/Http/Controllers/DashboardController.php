@@ -2,6 +2,7 @@
 
 namespace Modules\Staff\Http\Controllers;
 
+use App\Http\Resources\APIResource;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -36,7 +37,7 @@ class DashboardController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -57,7 +58,7 @@ class DashboardController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -76,7 +77,7 @@ class DashboardController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -96,7 +97,7 @@ class DashboardController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -112,7 +113,7 @@ class DashboardController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -129,7 +130,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->feeReport($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -147,7 +148,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->invoicesByPaymentName($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -164,7 +165,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->sessionsFeeReport($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -180,7 +181,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->programmeTypesReport($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -196,7 +197,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->recentLogins($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -212,7 +213,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->admissionReportAdmittedByProgramme($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -228,7 +229,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->admissionReportAdmittedByProgrammeType($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -244,7 +245,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->qualificationReportQualifiedByProgrammeType($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -260,7 +261,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->qualificationReportQualifiedByProgramme($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -277,7 +278,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->totalPaidAndUnpaid($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -294,7 +295,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->totalPaidAndUnpaidByProgrammeType($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -311,7 +312,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->totalPaidAndUnpaidByProgramme($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -337,7 +338,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->admittedByEntryMode($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -350,7 +351,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->activeAndNonActiveStudent();
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -367,7 +368,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->studentRegisteredAndUnregisteredCount($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -383,7 +384,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->schoolFeeTotalPaidAndUnpaid($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -399,7 +400,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->allFeeReport($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -416,7 +417,7 @@ class DashboardController extends Controller
 
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -452,7 +453,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->totalStudentsByLevels($request);
             return new APIResource($response, false, 200);        
         }catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         }catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -480,7 +481,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->totalPaidAndUnpaidAmountByProgrammeType($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -497,7 +498,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->totalPaidAndUnpaidAmountByProgrammeType($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -514,7 +515,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->totalPaidAndUnpaidAmountBylevelProgrammeType($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -531,7 +532,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->totalPaidAndUnpaidAmountBylevelProgrammeType($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -549,7 +550,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->totalPaidAndUnpaidAmountBylevelProgramme($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -567,7 +568,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->totalPaidAndUnpaidAmountBylevelProgramme($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -585,7 +586,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->totalPaidAndUnpaidAmountByProgramme($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -602,7 +603,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->totalPaidAndUnpaidAmountByProgramme($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -649,7 +650,7 @@ class DashboardController extends Controller
             $response = $this->dashboardService->walletFunding($request);
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource($e->errors(), true, 400);
+            return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -668,7 +669,7 @@ class DashboardController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }

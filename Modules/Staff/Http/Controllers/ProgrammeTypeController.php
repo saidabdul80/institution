@@ -2,6 +2,7 @@
 
 namespace Modules\Staff\Http\Controllers;
 
+use App\Http\Resources\APIResource;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -40,7 +41,7 @@ class ProgrammeTypeController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );          
+            return new APIResource(array_values($e->errors())[0], true, 400 );          
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );   
         }
@@ -61,7 +62,7 @@ class ProgrammeTypeController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );          
+            return new APIResource(array_values($e->errors())[0], true, 400 );          
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );   
         }
@@ -80,7 +81,7 @@ class ProgrammeTypeController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );          
+            return new APIResource(array_values($e->errors())[0], true, 400 );          
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );   
         }

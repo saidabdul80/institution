@@ -8,7 +8,7 @@ function generateWalletNumber(){
     return date("ym").rand(1000, 9999).date('i');
 }
 
-function generateJTR(){
+function generateTrxId(){
     $number = "ttid" . date("ymdhis") . rand(100, 999);
     return $number;
 }

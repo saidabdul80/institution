@@ -303,15 +303,15 @@ use Throwable;
         if(gettype($subject_grades) ==="array"){
             $subject_grades = json_encode($subject_grades);
         }
-        $applicant_id = $request->get('applicant_id');
+        // $applicant_id = $request->get('applicant_id');
         $session_id = $request->get('session_id');
         $olevel_id = $request->get('id');
             return DB::table('olevel_results')->updateOrInsert([
-                "applicant_id"=> $applicant_id,
-                "id" => $olevel_id,
+                "applicant_id"=> $request->user()?->id,           
                 "session_id"=> $session_id,
+                "exam_type_id"=> $request->get('exam_type_id'),
             ],[
-                "applicant_id"=> $applicant_id,
+                "applicant_id"=> $request->user()?->id,
                 "exam_type_id"=> $request->get('exam_type_id'),
                 "examination_number"=> $request->get('examination_number'),
                 "subjects_grades"=> $subject_grades,
@@ -324,6 +324,25 @@ use Throwable;
             ]);
         // throw new Exception("Applicant not found. Probably applicant not in current session",404);
     }
+
+    public function insertOrUpdateDocument($id, $name, $url){
+        return DB::table('documents')->updateOrInsert([
+            "applicant_id"=> $id,           
+            "name"=> $name,
+        ],[
+            "url"=> $url,
+        ]);
+    }   
+
+    
+    public function getDocuments($request){
+        return DB::table('documents')->where(["applicant_id"=> $request->user()?->id])->get();
+    }   
+
+    public function checkDocument($applicant_id, $name){
+        return DB::table('documents')->where(["applicant_id"=> $applicant_id, "name"=>$name])->first();
+    }   
+
 
     public function insertALevel( $alevel_data, $certificate_data ){
         try {

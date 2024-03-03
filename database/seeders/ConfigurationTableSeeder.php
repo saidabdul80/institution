@@ -566,7 +566,7 @@ class ConfigurationTableSeeder extends Seeder
                 'value'=>'false',
                 'field_type'=> 'radio',
                 "model"=> "",                
-                "seeds" => 'default,false',      
+                "seeds" => 'true,false',      
                 "description"=>"",
                 "programme_type_id"=>'',
                 "updated_by"=>"",          
@@ -586,7 +586,7 @@ class ConfigurationTableSeeder extends Seeder
                 'value'=>'false',
                 'field_type'=> 'radio',
                 "model"=> "",                
-                "seeds" => 'default,false',      
+                "seeds" => 'true,false',      
                 "description"=>"",
                 "programme_type_id"=>'',
                 "updated_by"=>"",          
@@ -596,7 +596,7 @@ class ConfigurationTableSeeder extends Seeder
                 'value'=>'false',
                 'field_type'=> 'radio',
                 "model"=> "",                
-                "seeds" => 'default,false',      
+                "seeds" => 'true,false',      
                 "description"=>"",
                 "programme_type_id"=>'',
                 "updated_by"=>"",          
@@ -606,11 +606,23 @@ class ConfigurationTableSeeder extends Seeder
                 'value'=>'false',
                 'field_type'=> 'radio',
                 "model"=> "",                
-                "seeds" => 'default,false',      
+                "seeds" => 'true,false',      
                 "description"=>"",
                 "programme_type_id"=>'',
                 "updated_by"=>"",          
-            ]
+            ],
+            [
+                'name'=>'enable_acceptance_fee', 
+                'value'=>'true',
+                'field_type'=> 'radio',
+                "model"=> "",                
+                "seeds" => 'true,false',      
+                "description"=>"",
+                "programme_type_id"=>'',
+                "updated_by"=>"",          
+            ],
+            
+
         ]);
     }
 }

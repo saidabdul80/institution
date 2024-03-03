@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\TenantPaymentCharge;
 use App\Repositories\ApplicantRepository;
+use App\Repositories\ConfigurationRepository;
 use App\Repositories\InvoiceRepository;
 use App\Repositories\InvoiceTypeRepository;
 use App\Repositories\PaymentRepository;
@@ -54,66 +56,74 @@ class InvoiceService
     }
 
     public function generateInvoice($request, $user)
-    {      
+    {
         $session_id = $request->get('session_id');
         $payment_category_slug = $request->get('payment_category_slug');        
         $invoice_type_id = $request->get('invoice_type_id');
         $semester_id = $request->get('semester_id');
         $meta_data = $request->get('meta_data') ?? [];
-        $userPaymentDetails = $this->invoiceTypeRepository->getPaymentDetails($user,$session_id);
-        $paymentCategory = $this->invoiceTypeRepository->getPaymentCategoryOfInvoiceTypeId($invoice_type_id);        
+
+        $userPaymentDetails = $this->invoiceTypeRepository->getPaymentDetails($session_id, $user);
+        $paymentCategory = $this->invoiceTypeRepository->getPaymentCategoryOfInvoiceTypeId($invoice_type_id);
         
-        $payment_category_id  = $paymentCategory->id;
-        if($user->user_type ==='applicant'){
-            $application_fee = array_filter($userPaymentDetails, function ($item){                            
-                return $item['payment_category']['short_name'] === 'application_fee';
-            }, false);
-            $acceptance_fee = array_filter($userPaymentDetails, function ($item){
-                return $item['payment_category']['short_name'] === 'acceptance_fee';
-            }, false);
-            
-            
-            $is_application_fee = array_reduce($userPaymentDetails, function ($carry, $item) use ($payment_category_id) {
-                //check if invoive to be generated is application fee                
-                return $carry || ($item['payment_category']['id'] === $payment_category_id && $item['payment_category']['short_name'] === 'application_fee' && $item['status'] === 'unpaid');
-            }, false);
-            
-            $is_acceptance_fee = array_reduce($userPaymentDetails, function ($carry, $item) use ($payment_category_id) {
-                //check if invoive to be generated is acceptance fee
-                return $carry || ($item['payment_category']['id'] === $payment_category_id && $item['payment_category']['short_name'] === 'acceptance_fee' && $item['status'] === 'unpaid');
-            }, false);
-            
-            //$item->payment_category->id === $payment_category_id && 
-            if($is_acceptance_fee || !$is_application_fee){
-                if (count($application_fee)>0) {                    
-                    //application fee exists and not paid
-                    if(!$is_application_fee){
-                    //and current invoice to be generated is not acceptance fee
-                    //check if acceptance fee is unpaid and throw error
-                        ($application_fee[0]->status ?? 'unpaid') == 'unpaid'?
-                        throw new \Exception('Application fee not paid'):'';                    
+        $payment_category_id = $paymentCategory->id;
+
+        if ($user->user_type === 'applicant') {
+            $acceptance_fee_is_enabled = ConfigurationRepository::check('enable_acceptance_fee', 'true');
+
+            if ($acceptance_fee_is_enabled) {
+                $application_fee = array_filter($userPaymentDetails, function ($item) {
+                    return $item['payment_category']['short_name'] === 'application_fee';
+                });
+
+                $acceptance_fee = array_filter($userPaymentDetails, function ($item) {
+                    return $item['payment_category']['short_name'] === 'acceptance_fee';
+                });
+
+                $registration_fee = array_filter($userPaymentDetails, function ($item) {
+                    return $item['payment_category']['short_name'] === 'registration_fee';
+                });
+
+                $is_application_fee = $this->isPaymentCategory($userPaymentDetails, $payment_category_id, 'application_fee');
+                $is_acceptance_fee = $this->isPaymentCategory($userPaymentDetails, $payment_category_id, 'acceptance_fee');
+                $is_registration_fee = $this->isPaymentCategory($userPaymentDetails, $payment_category_id, 'registration_fee');
+
+                if ($is_application_fee) {
+                    if (!empty($application_fee) && $application_fee[0]["status"] == 'paid') {
+                        throw new \Exception('Application fee has been paid already');
                     }
-                } else if (count($acceptance_fee)>0) {
-                    //acceptance fee exists                     
-                    if(!$is_acceptance_fee){
-                    //and current invoice to be generated is not acceptance fee
-                    //check if acceptance fee is unpaid and throw error
-                        $acceptance_fee[0]->status??'unpaid' == 'unpaid' ?
-                        throw new \Exception('Acceptance fee not paid')
-                        :'';
+                }
+
+                if ($is_acceptance_fee) {
+                    if (empty($application_fee) || $application_fee[0]["status"] == 'unpaid') {
+                        throw new \Exception('Application fee not paid');
+                    }
+
+                    if (!empty($acceptance_fee) && $acceptance_fee[0]["status"] == 'paid') {
+                        throw new \Exception('Acceptance fee has been paid already');
+                    }
+                }
+
+                if ($is_registration_fee) {
+                    if (empty($application_fee) || $application_fee[0]["status"] == 'unpaid') {
+                        throw new \Exception('Application fee not paid');
+                    }
+
+                    if ($acceptance_fee_is_enabled && (empty($acceptance_fee) || $acceptance_fee[0]["status"] == 'unpaid')) {
+                        throw new \Exception('Acceptance fee not paid');
                     }
                 }
             }
-                      
         }
 
-        $invoice_type = $this->invoiceTypeRepository->getByIdOrCategory(id: $invoice_type_id, category_id: $payment_category_id, category: $payment_category_slug);
+        $invoice_type = $this->invoiceTypeRepository->getByIdOrCategory($invoice_type_id);
 
         if (empty($invoice_type)) {
-            throw new \Exception("This payment has not been setup", 404);
+            throw new \Exception("This payment has not been setup", 400);
         }
 
-        // $student = $this->studentRepository->getById($owner_id);
+        $tenantCharge = TenantPaymentCharge::where(["payment_category_id" => $payment_category_id, "tenant_id" => tenant('id')])->first();
+        $charges = $tenantCharge->resolveCharges($invoice_type->amount);        
         $invoiceDetails = [
             'invoice_number' => generateInvoiceNumber(),
             'owner_id' => $user->id,
@@ -122,11 +132,18 @@ class InvoiceService
             'semester_id' => $invoice_type->semester_id ?? $semester_id,
             'invoice_type_id' => $invoice_type->id,
             'amount' => $invoice_type->amount,
+            'charges'=>$charges,
             'meta_data' => json_encode($meta_data),
             'status' => 'unpaid'
         ];
-        // $applicant = $this->applicantRepository->getById($owner_id);
 
         return $this->invoiceRepository->createInvoice($invoiceDetails);
+    }
+
+    private function isPaymentCategory($userPaymentDetails, $payment_category_id, $payment_category_short_name)
+    {
+        return array_reduce($userPaymentDetails, function ($carry, $item) use ($payment_category_id, $payment_category_short_name) {
+            return $carry || ($item['payment_category']['id'] === $payment_category_id && $item['payment_category']['short_name'] === $payment_category_short_name);
+        }, false);
     }
 }

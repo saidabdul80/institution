@@ -36,12 +36,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::middleware('tenancy')->group(function () {    
-    
-    Route::get('school-info', [Controller::class,'getSchoolInfo']);
+Route::middleware('tenancy')->group(function () {
+    Route::get('school-info', [CentralController::class,'getSchoolInfo']);    
     Route::get('/faculties', [FacultyController::class, 'getFaculties']);
     //Route::get('/departments', [DepartmentController::class, 'getDepartments']);
-    //Route::get('/courses', [CourseController::class, 'getCourses']);
+    Route::get('/courses', [CourseController::class, 'getCourses']);
     
     Route::get('/countries', [CentralController::class, 'country']);
     Route::get('/programme_types', [CentralController::class, 'programmeType']);
@@ -72,6 +71,8 @@ Route::middleware('tenancy')->group(function () {
 });
 
 Route::post('/save_school', [TenantController::class, 'createSchool']);
+
+Route::get('/webhooks/flutterwave', [TenantController::class, 'webhookFlutter']);
 
 
 Route::get('/run_for_missing_invoices', function(){

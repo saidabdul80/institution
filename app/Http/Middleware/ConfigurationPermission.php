@@ -20,7 +20,7 @@ class ConfigurationPermission
     public function handle(Request $request, Closure $next)
     {
         $permission = "can_set_".$request->get('name');        
-        $user = auth('api:staffportal')->user();  
+        $user = auth('api-staff')->user();  
         $permissions = Permission::all();
         if($permissions->has($permission)){
             if($user->hasPermissionTo($permission)){

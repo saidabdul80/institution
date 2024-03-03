@@ -1,7 +1,7 @@
 <?php
-
 namespace Modules\Staff\Http\Controllers;
 
+use App\Http\Resources\APIResource;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -46,7 +46,7 @@ class CourseController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -69,7 +69,7 @@ class CourseController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -90,7 +90,7 @@ class CourseController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -109,7 +109,7 @@ class CourseController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -128,7 +128,7 @@ class CourseController extends Controller
             return new APIResource($response, false, 200 );
 
         }catch(ValidationException $e){
-            return new APIResource($e->errors(), true, 400 );
+            return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -138,6 +138,8 @@ class CourseController extends Controller
     public function getCourses(Request $request){
 
         try{
+            $response = $this->courseService->courses($request);
+            return new APIResource($response, false, 200 );
             $key = 'courses_'.tenant('id');
             if(Redis::get($key) && !$request->has('search')){
                 $response = json_decode(Redis::get($key));

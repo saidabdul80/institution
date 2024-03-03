@@ -17,11 +17,12 @@ class Payments extends Migration
             Schema::create('payments', function (Blueprint $table) {
                 $table->id();
                 $table->float('amount');
+                $table->float('paid_amount')->comment("amount paid to us")->nullable();
                 $table->string('payment_reference')->nullable();
                 $table->string('payment_channel')->nullable();
                 $table->json('gateway_response')->nullable();
                 $table->string('transaction_id')->nullable();
-                $table->string('jtr');
+                $table->string('ourTrxRef');
                 $table->enum('status',['successful', 'failed','pending'])->default('pending');
                 $table->bigInteger('invoice_id')->unsigned()->nullable();
                 $table->bigInteger('owner_id')->unsigned();

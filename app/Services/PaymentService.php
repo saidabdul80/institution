@@ -13,8 +13,10 @@ use App\Repositories\BeneficiariesRepository;
 use App\Events\PaymentMade;
 use App\Events\InvoicePaid;
 use App\Events\WalletFunded;
+use App\Http\Controllers\TenantController;
 use App\Models\Tenant;
 use App\Repositories\AllocationRepository;
+use Flutterwave\Config\PackageConfig;
 use Illuminate\Support\Facades\Log;
 
 class PaymentService
@@ -36,30 +38,68 @@ class PaymentService
         }
     }
 
+    public function initiatePay($request, $callback_url = null)
+    {
+        $paymentDetails = $request->all();
+        $paymentDetails['applicant_id'] = $request->user()->id;        
+        $paymentDetails['owner_id'] = $request->user()->id;        
+        $paymentDetails['email'] = $request->user()->email; 
+        $paymentDetails['phone_number'] = $request->user()->phone_number; 
+        $paymentDetails['full_name'] = $request->user()->full_name; 
+        $paymentDetails['owner_type'] = $request->user()->user_type; 
+        if (isset($paymentDetails['payment_category'])) {
+            return $this->initiateInvoicePayment($paymentDetails, $callback_url);
+        } else {
+            return $this->initiateLoadWallet($paymentDetails, $callback_url);
+        }
+    }
+
     public function initiateInvoicePayment($paymentDetails, $callback_url = null)
     {
         try {
-            $check_paid = $this->paymentRepository->isPaymentComplete($paymentDetails["id"]);
+            $check_paid = $this->paymentRepository->isPaymentComplete($paymentDetails["invoice_number"]);
             if (!$check_paid) {
-                $check_init = $this->paymentRepository->isPaymentExist($paymentDetails["id"]);
+                $invoice = $this->invoiceRepository->getInvoiceByNumber($paymentDetails["invoice_number"]);
+                if(!$invoice){
+                    throw new \Exception('Invoice number is not valid, Create new invoice');
+                }
+
+                //percentage resolution;                
+                $paymentDetails['amount'] = $invoice->amount + $invoice->charges;
+                $paymentDetails['ashlab_charges'] = $invoice->charges;
+                $paymentDetails['invoice_id'] = $invoice->id;
+                $check_init = $this->paymentRepository->isPaymentExist($paymentDetails["invoice_number"]);
+                $paymentDetails['invoice_name'] = $invoice['invoice_name'];
                 if (!$check_init) {
                     $pay_mode = $paymentDetails['payment_mode'];
-                    $paymentDetails["ourTrxRef"] = $this->generateJtr();
+                    $paymentDetails["ourTrxRef"] = $this->generateTrxId();
+                    
                     switch ($pay_mode) {
                         case 'remita':
-                            $url = env('APP_ENV') == 'production' ? config('tespire.payment_gateways.remita.liveURL') : config('tespire.payment_gateways.remita.testURL');
+                            $url = env('APP_ENV') == 'production' ? config('ashlab.payment_gateways.remita.liveURL') : config('ashlab.payment_gateways.remita.testURL');
                             $rrr = $this->generateStandardRRR($paymentDetails, $url, $callback_url ?? null)["RRR"];
                             $paymentDetails['payment_reference'] = $rrr;
                             break;
                         case 'cbs':
                             $invoice = $this->cbsCreateInvoice($paymentDetails, 'https://nigerigr.com/api/v1/invoice/create');
-                            dd($invoice);
+                            
                             break;
-                        default:
-                            # code...
+                        case 'flutterwave':                            
+                            $response = $this->getInitializeUrlFlutterWave($paymentDetails);
+                            $authorization_url = $response->link;
+                            $key = explode('pay/',$authorization_url);                        
+                            $paymentDetails['payment_reference'] = $key[1];
                             break;
-                    }
-                    return $this->paymentRepository->createPayment($paymentDetails);
+                        case 'paystack':                    
+                            $response = $this->getInitializeUrlPayStack($paymentDetails);
+                            $authorization_url = $response->data->authorization_url;
+                            $paymentDetails['payment_reference'] = $response->data->reference;
+                            break;                            
+                        default:                                
+                            break;
+                    }                    
+                    $this->paymentRepository->createPayment($paymentDetails);
+                    return $authorization_url ?? null;
                 } else {
                     return $this->paymentRepository->getPaymentByInvoiceNumber($paymentDetails["id"]);
                 }
@@ -71,15 +111,76 @@ class PaymentService
         }
     }
 
+    public function getInitializeUrlFlutterWave($paymentDetails){
+        $webhook = env('APP_ENV') == 'production' ? config('ashlab.payment_gateways.flutterwave.redirect_url') : config('ashlab.payment_gateways.flutterwave.redirect_url');
+        $flutterwave_initialize_url = env('APP_ENV') == 'production' ? config('ashlab.payment_gateways.flutterwave.liveUrl') : config('ashlab.payment_gateways.flutterwave.testUrl');
+        $flwseck = env('APP_ENV') == 'production' ? config('ashlab.payment_gateways.flutterwave.live_secret_key') : config('ashlab.payment_gateways.flutterwave.test_secret_key');            
+
+        $data = [
+            "tx_ref"=> $paymentDetails['ourTrxRef'],
+            "amount"=> $paymentDetails['amount'],
+            "currency"=> "NGN",
+            "redirect_url"=> $webhook,
+            "meta"=> [
+                "consumer_id" => tenant('id'),
+                "ashlab_charges" =>$paymentDetails['ashlab_charges'],
+//              "consumer_mac" => "92a3-912ba-1192a"
+            ],
+            "customer"=> [
+                'email' => $paymentDetails['email'],
+                "phonenumber"=> $paymentDetails['phone_number'],
+                "name"=> $paymentDetails['full_name']
+            ],
+            "customizations"=>[
+                "title"=> tenant('school_name').' '.$paymentDetails['invoice_name'],
+                "logo"=> tenant('logo')
+            ]
+            ];        
+                
+        $response = Http::withHeaders([
+            "Authorization" => "Bearer " . $flwseck,
+            "Cache-Control" => "no-cache",
+        ])->post($flutterwave_initialize_url, $data)->body();
+        $response = json_decode($response);                    
+        if($response->status){
+            return $response->data;
+            /* $authorization_url = $response->data->authorization_url;
+            $transactionDetails['reference'] = $response->data->reference; */
+        }else{
+            throw new \Exception($response->message);                        
+        }
+    }
+
+    public function getInitializeUrlPayStack($paymentDetails){
+        $data = [
+            'email' => $paymentDetails['email'],
+            'amount' => $paymentDetails['amount'] * 100,                                    
+            'channels' => ["card", "bank_transfer"],                        
+        ];
+
+        $paystack_initialize_url = config('ashlab.paystack.initialize');
+        $response = Http::withHeaders([
+            "Authorization" => "Bearer " . env('PAYSTACK_SECRET_KEY'),
+            "Cache-Control" => "no-cache",
+        ])->post($paystack_initialize_url, $data)->body();
+        $response = json_decode($response);                    
+        if($response->status){
+            return $response->data;
+            /* $authorization_url = $response->data->authorization_url;
+            $transactionDetails['reference'] = $response->data->reference; */
+        }else{
+            throw new \Exception($response->message);                        
+        }
+    }
     public function initiateLoadWallet($paymentDetails, $callback_url = null)
     {
         try {
 
             $pay_mode = $paymentDetails['payment_mode'];
-            $paymentDetails["ourTrxRef"] = generateJtr();
+            $paymentDetails["ourTrxRef"] = generateTrxId();
             switch ($pay_mode) {
                 case 'remita':
-                    $url = config('tespire.payment_gateways.remita.liveURL');
+                    $url = config('ashlab.payment_gateways.remita.liveURL');
                     $rrr = $this->generateStandardRRR($paymentDetails, $url, $callback_url ?? null)["RRR"];
                     $paymentDetails['payment_reference'] = $rrr;
                     break;
@@ -154,33 +255,23 @@ class PaymentService
 
     public function requery($ourTrxRef)
     {
-        $payment = $this->getPaymentByJTR($ourTrxRef);
-        switch ($payment->payment_mode) {
+        $payment = $this->getPaymentByourTrxRef($ourTrxRef);        
+        switch ($payment?->payment_mode) {
             case 'remita':
                 $status = $this->requeryRemita($payment->payment_reference);
-                if ($status == 'successful' && $payment->status != 'successful') {
-                    event(new WalletFunded($payment));
+                if ($status == 'successful' && $payment->status != 'successful') {                 
                 }
 
                 return $status;
                 break;
             case 'flutterwave':
-                $response = $this->checkPaymentStatusByFlutterwave($ourTrxRef);
-                Log::info($response);
-                if ($response['status'] == 'success') {
-                    if ($payment->status != 'successful' && $response['data']['status'] == 'successful') {
-                        event(new WalletFunded($payment));
-                    }
-                    $payment->status = $response['data']['status'];
-                    $payment->payment_reference = $response['data']['flw_ref'];
-                    $payment->payment_channel = $response['data']['payment_type'];
-                    $payment->paid_at = Carbon::parse($response['data']['created_at'])->format('Y-m-d h:i:s');
-                    $payment->gateway_response = json_encode($response['data']);
-                    $payment->save();
-                    return $response['data']['status'];
+                $response = $this->checkPaymentStatusByFlutterwave($ourTrxRef);                
+                if ($response->status == 'success') {                    
+                    TenantController::updatePaymentRecord($response);                    
+                    return $response->status;
                 }
-                return $response['status'];
-
+                return $response->status;
+                break;
             default:
                 throw new Exception("Payment Gateway not supported", 303);
                 break;
@@ -192,9 +283,9 @@ class PaymentService
         return $this->paymentRepository->getByInvoiceId($invoice_id);
     }
 
-    public function getPaymentByJTR($ref)
+    public function getPaymentByourTrxRef($ref)
     {
-        return $this->paymentRepository->getPaymentByJTR($ref);
+        return $this->paymentRepository->getPaymentByourTrxRef($ref);
     }
 
     private function school_info($host)
@@ -203,7 +294,7 @@ class PaymentService
     }
 
 
-    private function generateJtr()
+    private function generateTrxId()
     {
         $number = "ourTrxRef" . date("ymdhis") . rand(100, 999);
         return $number;
@@ -415,7 +506,7 @@ class PaymentService
             "Content-Type" => "application/json",
             "Authorization" => 'remitaConsumerKey=' . $merchantId . ',remitaConsumerToken=' . $hash,
         ];
-        $url = config('tespire.payment_gateways.remita.liveURL');
+        $url = config('ashlab.payment_gateways.remita.liveURL');
         $response = Http::withHeaders($headers)->get($url . 'echannelsvc/' . $merchantId . '/' . $rrr . '/' . $hash . '/status.reg')->json();
         // var_dump($response);
         return $response['status'];
@@ -424,13 +515,17 @@ class PaymentService
     public function checkPaymentStatusByFlutterwave($ourTrxRef)
     {
 
+        $flwseck = env('APP_ENV') == 'production' ? config('ashlab.payment_gateways.flutterwave.live_secret_key') : config('ashlab.payment_gateways.flutterwave.test_secret_key');            
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
-            'Authorization' => 'Bearer ' . config('tespire.payment_gateways.flutterwave.live_secret_key')
-        ])->get("https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=$ourTrxRef");
-        if ($response->status() != 200) {
-            Log::error($response, ['tx_ref' => $ourTrxRef, 'environment' => env('APP_ENV'), 'key' => config('tespire.payment_gateways.flutterwave.live_secret_key')]);
-            return ['status' => 'pending'];
+            'Accept' => 'application/json',
+            'Authorization' => 'Bearer ' .$flwseck
+        ])->get("https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=$ourTrxRef")->body();
+        $response = json_decode($response);
+        
+        if ($response->status != 'success') {
+            //Log::error($response, ['tx_ref' => $ourTrxRef, 'environment' => env('APP_ENV'), 'key' => config('ashlab.payment_gateways.flutterwave.live_secret_key')]);
+            return json_decode(json_encode(['status' => 'pending']));
         }
         return $response;
     }
@@ -463,7 +558,7 @@ class PaymentService
             "Content-Type" => "application/json",
             "Authorization" => 'remitaConsumerKey=' . $merchantId . ',remitaConsumerToken=' . $hash,
         ];
-        $url = config('tespire.payment_gateways.remita.liveURL');
+        $url = config('ashlab.payment_gateways.remita.liveURL');
         $response = Http::withHeaders($headers)->get($url . 'echannelsvc/' . $merchantId . '/' . $payment_reference . '/' . $hash . '/status.reg')->json();
         $payment = [
             "payment_mode" => "remita",
@@ -502,7 +597,7 @@ class PaymentService
     {
         $rrr = $response[0]['rrr'];
         $status = $this->checkPaymentStatusByRRR($rrr);
-        $payment = $this->getPaymentByJTR($rrr);
+        $payment = $this->getPaymentByourTrxRef($rrr);
         $channel = $response[0]['channel'];
         $payment_details = [
             "payment_mode" => "remita",

@@ -108,7 +108,7 @@ class InvoiceTypeRepository{
         $invoice = $this->invoiceData($invoice_number);
         $this->invoice::where('id', $invoice->id)->update([
              "status" => "paid",
-             "confirmed_by" => auth('api:staffportal')->id(),
+             "confirmed_by" => auth('api-staff')->id(),
              "updated_at" => now()
          ]);
         event(new InvoicePaid($invoice));

@@ -17,9 +17,10 @@ class InvoiceTypeSevice extends Utilities{
     private $user;
     private $carbon;
     private $paymentCategory;
+    private $appends;
     public function __construct( InvoiceTypeRepository $invoiceTypeRepository, Carbon $carbon, PaymentCategory $paymentCategory)
     {        
-
+        $this->appends = ['session','total_amount','payment_name', 'payment_short_name', 'programme_type', 'level', 'programme', 'entry_mode', 'state', 'country', 'faculty', 'department', 'lga'];
         $this->invoiceTypeRepository = $invoiceTypeRepository;                              
         $this->carbon = $carbon;
         $this->paymentCategory = $paymentCategory;
@@ -27,21 +28,22 @@ class InvoiceTypeSevice extends Utilities{
 
 
     public function create($request){        
-        //return $request->all();
-        if(!$this->invoiceTypeRepository->exists($request->all())){            
-            $this->invoiceTypeRepository->create($request->all());                   
+        $data = $request->all();
+        $data = collect($data)->except($this->appends)->toArray();        
+        if(!$this->invoiceTypeRepository->exists($data)){            
+            $this->invoiceTypeRepository->create($data);                   
             return 'success';
         }
         throw new \Exception('InvoiceType already exists', 404);
     }
 
     public function update($request){        
-        if(!$this->invoiceTypeRepository->existsInOthers($request->get('id'), $request->all())){
-            $data = $request->all();
+        $data = $request->all();
+        $data = collect($data)->except($this->appends)->toArray();        
+        if(!$this->invoiceTypeRepository->existsInOthers($request->get('id'), $data)){
             $id = $data['id'];
             unset($data['id']);
-            $this->invoiceTypeRepository->update($id,$data);                   
-            return 'success';
+            return $this->invoiceTypeRepository->update($id,$data);                               
         }
         throw new \Exception('InvoiceType already exists', 404);
     }

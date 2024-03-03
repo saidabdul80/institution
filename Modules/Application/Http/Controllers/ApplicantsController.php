@@ -59,7 +59,7 @@ class ApplicantsController extends Controller
             
             return new APIResource(["applicant" => $applicant, "accessToken" => $accessToken], false, 200 );
         }catch(ValidationException $e){            
-            return new APIResource( formatError(formatError($e->errors())), true, 400 );
+            return new APIResource( formatError(formatError(array_values($e->errors())[0])), true, 400 );
         }catch(\Exception $e){
             return $e;
             return new APIResource($e->getMessage(), true, 400);
@@ -82,7 +82,7 @@ class ApplicantsController extends Controller
             $applicant = $this->applicantService->updateApplicant($request);
             return new APIResource($applicant, false, 200 );
         }catch(ValidationException $e){
-            return new APIResource(formatError($e->errors()), true, 400 );
+            return new APIResource(formatError(array_values($e->errors())[0]), true, 400 );
         }catch(\Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -151,7 +151,7 @@ class ApplicantsController extends Controller
         } catch (ValidationException $e) {
 
             //catch validation errors and return in response format
-            return new APIResource(formatError($e->errors()), true, 400 );
+            return new APIResource(formatError(array_values($e->errors())[0]), true, 400 );
         }catch(Exception $e){            
             //Log::error($e->getMessage());
             return $e;
@@ -187,7 +187,7 @@ class ApplicantsController extends Controller
             $response = $this->applicantService->applicants($request);
             return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new APIResource(formatError($e->errors()), true, 400 );
+            return new APIResource(formatError(array_values($e->errors())[0]), true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -203,7 +203,7 @@ class ApplicantsController extends Controller
 
             return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new APIResource(formatError($e->errors()), true, 400 );
+            return new APIResource(formatError(array_values($e->errors())[0]), true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -216,7 +216,7 @@ class ApplicantsController extends Controller
             ]);
             return new APIResource($this->applicantService->uploadThisPicture($request), false, 200);
         } catch (ValidationException $e) {
-            return new APIResource(formatError($e->errors()), true, 400);
+            return new APIResource(formatError(array_values($e->errors())[0]), true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -226,14 +226,13 @@ class ApplicantsController extends Controller
     {
         try{
 
-            Validator::make($request->all(), [
-                'id' => 'required',
+            Validator::make($request->all(), [                
                 'session_id'=>'required'
             ]);
             $response = $this->applicantService->getApplicantOLevelResults($request);
             return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new APIResource(formatError($e->errors()), true, 400 );
+            return new APIResource(formatError(array_values($e->errors())[0]), true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -253,7 +252,7 @@ class ApplicantsController extends Controller
 
             return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new APIResource(formatError($e->errors()), true, 400 );
+            return new APIResource(formatError(array_values($e->errors())[0]), true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -271,7 +270,7 @@ class ApplicantsController extends Controller
 
             return new APIResource($response, false, 200);
         } catch (ValidationException $e) {
-            return new APIResource(formatError($e->errors()), true, 400);
+            return new APIResource(formatError(array_values($e->errors())[0]), true, 400);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }
@@ -280,9 +279,8 @@ class ApplicantsController extends Controller
     public function updateOLevelResults(Request $request)
     {
         try{
-
-            $request->validate([
-                'applicant_id'=>'required',
+            
+            $request->validate([             
                 'exam_type_id'=>'required',
                 'examination_number'=>'required',
                 'subjects_grades'=>'required',
@@ -292,15 +290,46 @@ class ApplicantsController extends Controller
             ]);
 
             $response = $this->applicantService->saveOLevelResults($request);
-
-            return new APIResource($response, false, 200 );
+            return new APIResource("Saved successfuly", false, 200 );
         }catch(ValidationException $e){
-            return new APIResource(formatError($e->errors()), true, 400 );
+            return new APIResource(formatError(array_values($e->errors())[0]), true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
 
     }
+
+    public function getDocuments(Request $request){
+        try{
+          
+            $response = $this->applicantService->getDocuments($request);
+
+            return new APIResource($response, false, 200 );
+        }catch(Exception $e){
+            return new APIResource($e->getMessage(), true, 400 );
+        }
+    }
+
+    public function updateDocument(Request $request)
+    {
+        try{
+     
+            $request->validate([            
+                "name"=>"required",
+                "file"=>"required",                
+            ]);
+
+            $response = $this->applicantService->updateDocument($request);
+
+            return new APIResource("Saved Successfuly", false, 200 );
+        }catch(ValidationException $e){
+            return new APIResource(formatError(array_values($e->errors())[0]), true, 400 );
+        }catch(Exception $e){
+            return new APIResource($e->getMessage(), true, 400 );
+        }
+    }
+
+
 
     public function updateALevel(Request $request)
     {
@@ -310,7 +339,6 @@ class ApplicantsController extends Controller
                 'institution_attended' => 'required',
                 'from' => 'required',
                 'to' => 'required',
-                'applicant_id' => 'required',
                 'qualification_id' => 'required'
             ]);
 
@@ -318,7 +346,7 @@ class ApplicantsController extends Controller
 
             return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new APIResource(formatError($e->errors()), true, 400 );
+            return new APIResource(formatError(array_values($e->errors())[0]), true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -341,7 +369,7 @@ class ApplicantsController extends Controller
 
             return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new APIResource(formatError($e->errors()), true, 400 );
+            return new APIResource(formatError(array_values($e->errors())[0]), true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
@@ -359,7 +387,7 @@ class ApplicantsController extends Controller
 
             return new APIResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new APIResource(formatError($e->errors()), true, 400 );
+            return new APIResource(formatError(array_values($e->errors())[0]), true, 400 );
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }

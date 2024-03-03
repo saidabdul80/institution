@@ -10,6 +10,7 @@ use App\Repositories\ConfigurationRepository;
 use App\Services\Utilities;
 use Psy\Exception\ThrowUpException;
 use App\Repositories\InvoiceTypeRepository as CentralInvoiceTypeRepository;
+use Illuminate\Support\Facades\Storage;
 
 class ApplicantsService{
 
@@ -127,7 +128,7 @@ class ApplicantsService{
 
     public function getApplicantOLevelResults($request)
     {
-        $response =  $this->applicantRepository->getOlevelResults($request->get('id'), $request->get('session_id'));     
+        $response =  $this->applicantRepository->getOlevelResults($request->user()->id, $request->get('session_id'));     
         return $response->olevel;
     }
 
@@ -149,11 +150,43 @@ class ApplicantsService{
         return $response;
     }
 
+    public function updateDocument($request)
+    {
+        $file = $request->file('file');
+        $name = $request->input('name');
+        $disk = env('DISK');
+
+        if (!$file) {
+            throw new \Exception('No file uploaded.');
+        }
+
+        // Store the file on the specified disk and get the path
+        $filePath = Storage::disk($disk)->putFile('documents', $file);        
+        $url = Storage::disk($disk)->url($filePath);
+
+        // Check if a file with the same name already exists for the user
+        $existingFile = $this->applicantRepository->checkDocument($request->user()->id, $name);
+        
+        if ($existingFile?->name) {                
+            $key = basename($existingFile->url);
+            Storage::disk($disk)->delete("documents/{$key}");
+        }
+
+        // Insert or update the document record in the database
+        $response =  $this->applicantRepository->insertOrUpdateDocument($request->user()->id, $name, $url);
+        
+        return $response;
+    }
+
+    public function getDocuments($request){
+        $response =  $this->applicantRepository->getDocuments($request);
+        return $response;
+    }
 
     public function saveALevel($request)
     {
         $data_to_alevel_tbl = $certificate_data =array();
-        $data_to_alevel_tbl['applicant_id'] =$request->get('applicant_id');
+        $data_to_alevel_tbl['applicant_id'] =$request->user()->id;
         $data_to_alevel_tbl['institution_attended'] =$request->get('institution_attended');
         $data_to_alevel_tbl['from'] = date('Y-m-d H:i:s',strtotime($request->get('from')));
         $data_to_alevel_tbl['to'] =date('Y-m-d H:i:s',strtotime($request->get('to')));
@@ -170,7 +203,6 @@ class ApplicantsService{
         $certificate_data['url'] =$request->get('url')??""; //send to cloud, but pass empty for now
         $certificate_data['filename'] =$request->get('filename');
         $alevel_id = $request->get('id')??"";
-
         if($alevel_id === ""){
             //insert
             $response =  $this->applicantRepository->insertALevel( $data_to_alevel_tbl, $certificate_data);
@@ -194,11 +226,37 @@ class ApplicantsService{
 
     public function applicantPaymentDetails($request, $applicant)
     {
-        $response = $this->centralInvoiceTypeRepository->getPaymentDetails($applicant,$request->get('session_id'));
-        if(!$response){
-            throw new Exception("Sorry, no payment setup for you yet",404);
+        $sessionId = $request->get('session_id');
+        $response = $this->centralInvoiceTypeRepository->getPaymentDetails($sessionId, $applicant);
+    
+        if (!$response) {
+            throw new Exception("Sorry, no payment setup for you yet", 404);
+        }
+    
+        $details = collect($response);
+    
+        $applicationFee = $details->firstWhere('payment_short_name', 'application_fee');
+        $acceptanceFee = $details->firstWhere('payment_short_name', 'acceptance_fee');
+        $registrationFee = $details->firstWhere('payment_short_name', 'registration_fee');
+        
+        if(!$applicationFee){
+            throw new Exception('Application fee is not yet available');
         }
 
+        if ($applicationFee && $applicationFee['status'] == 'unpaid') {
+            return [$applicationFee];
+        }
+            
+        if (ConfigurationRepository::check('enable_acceptance_fee', 'true')){
+            if(!$acceptanceFee){
+                throw new Exception('Acceptance fee is not yet available');
+            }
+
+            if($acceptanceFee['status'] == 'unpaid') {
+                return [$acceptanceFee];
+            }
+        } 
+            
         return $response;
     }
 

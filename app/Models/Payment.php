@@ -11,7 +11,7 @@ class Payment extends Model
 
     protected $with = ['invoice'];
     protected $casts = ['created_at'=>'datetime:Y-m-d'];
-    protected $fillable = ["invoice_id", "amount", "jtr", "payment_reference", "session_id", "owner_id", "owner_type", "payment_mode"];
+    protected $fillable = ["invoice_id",'paid_amount', "amount", "ourTrxRef", "payment_reference", "session_id", "owner_id", "owner_type", "payment_mode"];
     protected $appends = ['owner'];
     public function invoice()
     {

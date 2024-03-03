@@ -129,7 +129,7 @@ class StaffService{
 
     public function deactivateStaff($request){
         $id = $request->get('id');
-        if(auth('api:staffportal')->id() == $id){
+        if(auth('api-staff')->id() == $id){
             throw new Exception("Sorry, You Cannot Deactivate Yourself",400);
         }else{
             $this->staffRepository->delete($request->get('id'));
@@ -211,7 +211,7 @@ class StaffService{
     }
 
     public function assignCoursesToStaff($request){
-        return $this->staffRepository->assignCourse($request->get('course_ids'),$request->get('staff_id'),$request->get('semester_id'),auth('api:staffportal')->id(), $request->get('programme_id'), $request->get('session_id'), $request->get('faculty_id'), $request->get('department_id'));
+        return $this->staffRepository->assignCourse($request->get('course_ids'),$request->get('staff_id'),$request->get('semester_id'),auth('api-staff')->id(), $request->get('programme_id'), $request->get('session_id'), $request->get('faculty_id'), $request->get('department_id'));
     }
 
     public function unAssignCoursesFromStaff($request){

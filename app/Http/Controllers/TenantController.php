@@ -3,10 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\APIResource;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Tenant;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class TenantController extends Controller
@@ -27,6 +31,7 @@ class TenantController extends Controller
                 'school_name' => $request->get('school_name'),
                 'short_name' => $request->get('short_name') ?? '',
                 'domain' => $request->get('domain'),
+                'country_id'=>160,//Nigeria
                 'tenancy_db_name' => $request->get('db_name')
             ];
             
@@ -100,4 +105,54 @@ class TenantController extends Controller
         } */
     }
 
+    public function webhookFlutter(Request $request){
+     
+        $secretKey = env('APP_ENV') == 'production' ? config('ashlab.payment_gateways.flutterwave.live_secret_key') : config('ashlab.payment_gateways.flutterwave.test_secret_key');            
+        /* $signature = $request->header('verif-hash');
+        if (!$signature || ($signature !== $secretKey)) {
+            // This request isn't from Flutterwave; discard
+            Log::info("  ");
+            abort(401);
+        }     */ 
+        $payload = $request->all();
+        try{
+            $transactionId = $payload['transaction_id'];
+            $flwseck = env('APP_ENV') == 'production' ? config('ashlab.payment_gateways.flutterwave.live_secret_key') : config('ashlab.payment_gateways.flutterwave.test_secret_key');            
+            $response = Http::withHeaders([
+                "Authorization" => "Bearer " . $flwseck,
+                "Cache-Control" => "no-cache"
+            ])->get("https://api.flutterwave.com/v3/transactions/$transactionId/verify")->body();
+            $response = json_decode($response);                    
+            if($response?->status == 'success'){
+                self::updatePaymentRecord($response);
+                return view('transactions.completed');
+            }else{
+                throw new \Exception($response->message);                        
+            }        
+        }catch(\Exception $e){
+
+        }
+    }
+
+    static public function updatePaymentRecord($response){
+         
+        $tenant = Tenant::find($response->data?->meta?->consumer_id);
+        $tenant->run(function() use ($response){                
+            $payment = Payment::where('ourTrxRef', $response?->data?->tx_ref)->first();
+            if($response->data->amount >= $payment->amount){
+                $payment->status = 'successful';
+            }
+            $payment->paid_amount = $response->data->amount;
+            $payment->save();                    
+            $payment->invoice->status = 'paid';
+            $payment->payment_mode = 'flutterwave';
+            $payment->invoice->payment_channel = 'gateway';
+            $payment->gateway_response = json_encode($response->data);
+            if($response->data->flw_ref??false){
+                $payment->payment_reference = $response->data->flw_ref;
+            }
+            $payment->paid_at = Carbon::parse($response->data->created_at?? now())->format('Y-m-d h:i:s');
+            $payment->invoice->save();
+        });
+    }
 }

@@ -69,11 +69,11 @@ class Kernel extends HttpKernel
         "configuration" =>  \App\Http\Middleware\ConfigurationPermission::class,
         'idempotency' => \App\Http\Middleware\Idempotency::class,
         'tenancy'=> \App\Http\Middleware\InitializeTenancy::class,
-    ];
-
-    protected $middlewareAliases = [        
         'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
         'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
         'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+    ];
+
+    protected $middlewareAliases = [        
     ];
 }

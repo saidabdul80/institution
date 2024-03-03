@@ -10,7 +10,16 @@ class Course extends Model
 {
 
     use HasFactory, SoftDeletes;
-
+    protected $fillable = [
+        'title',
+        'code',
+        'course_category_id',
+        'department_id',
+        'tp',
+        'credit_unit',
+        'level_id',
+        'status'
+    ];
     public function getLevelAttribute() {
         return Level::find($this->level_id)?->title;
     }

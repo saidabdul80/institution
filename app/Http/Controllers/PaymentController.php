@@ -25,11 +25,12 @@ class PaymentController extends Controller
 
     public function initiatePayment(Request $request)
     {
+     
         try {
-            $payment = $this->paymentService->initiatePayment($request->all());
+            $payment = $this->paymentService->initiatePay($request);
             return new ApiResource($payment, false, 200);
         } catch (ValidationException $e) {
-            return new ApiResource($e->errors(), true, 400);
+            return new ApiResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             return new ApiResource($e->getMessage(), true, $e->getCode());
         }
@@ -41,7 +42,7 @@ class PaymentController extends Controller
             $requery = $this->paymentService->requery($request->payment_reference);
             return new ApiResource($requery, false, 200);
         } catch (Exception $e) {
-            return new ApiResource($e->getMessage(), true, $e->getCode());
+            return new ApiResource($e->getMessage(), true, 400);
         }
     }
 
@@ -62,7 +63,7 @@ class PaymentController extends Controller
             $response = $this->paymentService->pay($request->get('invoice_id'));
             return new ApiResource($response, false, 200 );
         }catch(ValidationException $e){
-            return new ApiResource($e->errors(), true, 400 );
+            return new ApiResource(array_values($e->errors())[0], true, 400 );
         } catch (Exception $e) {
             return $e;
             return new ApiResource($e->getMessage(), true, $e->getCode());

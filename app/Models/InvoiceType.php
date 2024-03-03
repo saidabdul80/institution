@@ -14,6 +14,8 @@ class InvoiceType extends Model
     protected $table = "invoice_types";
     public $timestamps = true;
 
+    protected $fillable = ["*"];
+
     public function payment_category()
     {
         return $this->belongsTo(PaymentCategory::class);
@@ -40,6 +42,16 @@ class InvoiceType extends Model
         $level = Level::find($this->applied_level_id);
         if (!is_null($level)) {
             return "{$level->title}";
+        } else {
+            return '';
+        }
+    }
+
+    public function getSessionAttribute()
+    {
+        $session = Session::find($this->session_id);
+        if (!is_null($session)) {
+            return "{$session->name}";
         } else {
             return '';
         }
@@ -162,5 +174,5 @@ class InvoiceType extends Model
         return $query->where('payment_category_id','!=', $accommodationFeeId);
     }
 
-    protected $appends = ['total_amount','payment_name', 'payment_short_name', 'programme_type', 'level', 'programme', 'entry_mode', 'state', 'country', 'faculty', 'department', 'lga'];
+    protected $appends = ['session','total_amount','payment_name', 'payment_short_name', 'programme_type', 'level', 'programme', 'entry_mode', 'state', 'country', 'faculty', 'department', 'lga'];
 }
