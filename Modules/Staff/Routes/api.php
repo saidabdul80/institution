@@ -46,7 +46,7 @@ use Modules\Staff\Http\Controllers\InvoiceController;
 Route::prefix('staff')->middleware('tenancy')->group(function() {
     Route::get('/login', function() {
         return ["message" => "You must be logged in to do that!"];
-    })->name('login');
+    });
     Route::post('/login', [StaffController::class, 'login']);
 
     Route::group(["middleware" => ['auth:api-staff']], function () {
@@ -312,7 +312,7 @@ Route::prefix('staff')->middleware('tenancy')->group(function() {
 });
 
 
-Route::prefix('open')->group(function () {
+Route::prefix('open')->middleware('tenancy')->group(function () {
     Route::get('/students/{matric_number?}', [StudentController::class, 'getStudent']);
 
     Route::get('/programme_courses/{search?}', [ProgrammeController::class, 'programmeCoursesWithoutPaginate']);

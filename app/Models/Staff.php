@@ -30,6 +30,17 @@ class Staff  extends Authenticatable
         }
     }
 
+     /**
+     * Get all unique permissions names as an array.
+     */
+    
+    public function getAllPermissionsAttribute()
+    {
+        // Retrieve all permissions directly assigned or via roles.
+        return $this->getAllPermissions()->pluck('name')->unique()->sort()->values();
+    }
+
+
     public function getRolePermissionsAttribute(){                
          return $this->getPermissionsViaRoles();
     }
@@ -56,7 +67,8 @@ class Staff  extends Authenticatable
 
     public function getRoleAttribute()
     {
-        return Role::find($this->staff_role_id)->name ?? '';
+        $rolenames =  $this->getRelation('roles')->pluck('name')->toArray();
+        return $rolenames;
     }
 
   
@@ -76,7 +88,7 @@ class Staff  extends Authenticatable
         return "{$this->first_name} {$this->middle_name} {$this->surname}";
     }
 
-    protected $appends = ['department', 'is_super_admin', 'role_permissions', 'full_name'];
+    protected $appends = ['department', 'is_super_admin', 'role_permissions', 'full_name', 'all_permissions', 'role'];
 
     protected static function newFactory()
     {

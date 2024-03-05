@@ -40,10 +40,10 @@ class CourseService extends Utilities{
 
     public function newCourse($request){
 
-//        $existData = $this->courseRepository->exists($request->get('id'), $request->get('code'));
-//        if($existData){
-//            throw new Exception("Course Code Already Exist",400);
-//        }
+        $existData = $this->courseRepository->exists($request->get('id'), $request->get('code'));
+        if($existData){
+            throw new Exception("Course Code Already Exist",400);
+        }
         $data = $request->all();
         $data['created_by'] = auth('api-staff')->id();
         $response = $this->courseRepository->create($data);

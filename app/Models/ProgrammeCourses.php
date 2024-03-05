@@ -14,7 +14,15 @@ class ProgrammeCourses extends Model
     use HasFactory, SoftDeletes, Searchable;
     protected $table = "programme_courses";
 
-
+    protected $fillable =[
+        'programme_id',
+        'session_id',
+        'semester_id',
+        'tp',
+        'course_id',
+        'level_id',
+        'staff_id'
+    ];
     public function getProgrammeNameAttribute() {
         $programme = Programme::find($this->programme_id);
         if(isset($programme->name)){

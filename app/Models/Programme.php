@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\CommaSeparatedCast;
 use App\Traits\Searchable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +14,9 @@ class Programme extends Model
     use HasFactory, SoftDeletes, Searchable;
 
     protected $with = ['programme_options'];
+    protected $casts =[
+        'required_subjects' => CommaSeparatedCast::class,
+    ];
     protected $fillable = ['*'];
     public function getFacultyAttribute() {
         $faculty = Faculty::find($this->faculty_id);
@@ -31,6 +35,12 @@ class Programme extends Model
             return '';
         }
     }
+    
+    public function getCoursesCodesAttribute()
+    {
+        return $this->courses->pluck('code')->join(', ');
+    }
+
     public function getEntryModeAttribute() {
         $entryMode = EntryMode::find($this->entry_mode_id);
         if(!is_null($entryMode)){
@@ -48,6 +58,21 @@ class Programme extends Model
             return '';
         }
     }
+    
+    public function getSubjectsAttribute() {
+        $obj = Subject::whereIn('id',$this->required_subjects)->pluck('name');
+        return $obj;
+    }
+
+    public function getGraduationLevelAttribute() {
+        $obj = Level::find($this->graduation_level_id);
+        if(!is_null($obj)){
+            return "{$obj->title}";
+        }else{
+            return '';
+        }
+    }
+
 
     public function scopeSearch($query, $search)
     {
@@ -61,6 +86,13 @@ class Programme extends Model
         return $this->hasMany(ProgrammeOption::class);
     }
 
-    protected $appends = ['entry_mode','department','faculty','programme_type'];
+    public function courses()
+    {
+        return $this->belongsToMany(Course::class, 'programme_courses', 'programme_id', 'course_id')
+                    ->withPivot('id as programme_course_id')->wherePivot('deleted_at',null);
+    }
+    
 
+    protected $appends = ['entry_mode','department','faculty','programme_type','graduation_level','subjects'];
+    public $appends_props = ['entry_mode','department','faculty','programme_type','graduation_level','subjects','programme_options'];
 }

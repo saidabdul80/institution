@@ -18,7 +18,8 @@ class Course extends Model
         'tp',
         'credit_unit',
         'level_id',
-        'status'
+        'status',
+        'semester'
     ];
     public function getLevelAttribute() {
         return Level::find($this->level_id)?->title;
@@ -42,6 +43,7 @@ class Course extends Model
     }
 
     protected $appends = ['department','semester','level','course_code'];
+    public $appends_props = ['department','semester','level','course_code'];
 
     public function scopeSearch($query, $search)
     {

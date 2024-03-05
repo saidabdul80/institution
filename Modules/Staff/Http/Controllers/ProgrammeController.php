@@ -166,8 +166,7 @@ class ProgrammeController extends Controller
                 "programme_id" => "required",                
                 "course_ids" => "required",  //[1,2,3,4]          
                 "level_id"=>"required",
-                "semester_id"=>"required",
-                "staff_id"=>"required",                                
+                "semester_id"=>"required",                                               
             ]);        
                           
             $response = $this->programService->assignCoursesToProgramme($request);        

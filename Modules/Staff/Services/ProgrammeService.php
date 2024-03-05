@@ -101,6 +101,7 @@ class ProgrammeService extends Utilities{
         $data = $request->all();
         $course_ids = $data['course_ids'];
         unset($data['course_ids']);        
+        $data['staff_id'] = $request->user()->id;
         return $this->programmeRepository->assign($data, $course_ids);
 
     }

@@ -27,6 +27,11 @@ class CourseRepository{
     public function update($id, $data){
 
         $course = $this->course::find($id);
+        foreach($this->course->appends_props as  $appends){
+            if(isset($data[$appends])){
+                unset($data[$appends]);
+            }
+        }
         foreach($data as $key => $value){
             if($key != "id"){
                 $course->$key = $value;
@@ -39,6 +44,11 @@ class CourseRepository{
     }
 
     public function create($data){
+        foreach($this->course->appends_props as  $appends){
+            if(isset($data[$appends])){
+                unset($data[$appends]);
+            }
+        }
         $course = $this->course::create($data);
         return $course;
     }

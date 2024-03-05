@@ -3,6 +3,7 @@
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\CentralController;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\ExportController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PDFController;
@@ -37,6 +38,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::middleware('tenancy')->group(function () {
+    Route::post('/export-db', [ExportController::class,'exportData']);
     Route::get('school-info', [CentralController::class,'getSchoolInfo']);    
     Route::get('/faculties', [FacultyController::class, 'getFaculties']);
     //Route::get('/departments', [DepartmentController::class, 'getDepartments']);
