@@ -7,6 +7,7 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PDFController;
+use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\TenantController;
 use App\Jobs\CreateInvoice;
 use App\Jobs\CreateInvoiceApplicant;
@@ -70,6 +71,13 @@ Route::middleware('tenancy')->group(function () {
     Route::get('/states/{country_id?}', [CentralController::class, 'state']);
     Route::get('/lgas/{state_id?}', [CentralController::class, 'lga']);
     Route::get('/programmes/{id?}', [CentralController::class, 'programme']);
+
+    
+    Route::get('/templates', [TemplateController::class, 'index'])->name('templates.index');
+    Route::post('/templates', [TemplateController::class, 'store'])->name('templates.store');
+    Route::get('/templates/{template}', [TemplateController::class, 'show'])->name('templates.show');
+    Route::post('/templates/update', [TemplateController::class, 'update'])->name('templates.update');
+    Route::delete('/templates/{template}', [TemplateController::class, 'destroy'])->name('templates.destroy');
 });
 
 Route::post('/save_school', [TenantController::class, 'createSchool']);

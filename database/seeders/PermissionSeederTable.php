@@ -162,33 +162,33 @@ class PermissionSeederTable extends Seeder
         /* 
             Role::insert(
                 [
-                    ['name' => 'v_c', 'guard_name' =>  "api:staff"],
-                    ['name' => 'faculty', 'guard_name' =>  "api:staff"],
-                    ['name' => 'dean', 'guard_name' =>  "api:staff"],
-                    ['name' => 'hod', 'guard_name' =>  "api:staff"],
-                    ['name' => 'exam', 'guard_name' =>  "api:staff"],
-                    ['name' => 'library', 'guard_name' =>  "api:staff"],
-                    ['name' => 'bursar', 'guard_name' =>  "api:staff"],
-                    ['name' => 'security', 'guard_name' =>  "api:staff"]
+                    ['name' => 'v_c', 'guard_name' =>  "api-staff"],
+                    ['name' => 'faculty', 'guard_name' =>  "api-staff"],
+                    ['name' => 'dean', 'guard_name' =>  "api-staff"],
+                    ['name' => 'hod', 'guard_name' =>  "api-staff"],
+                    ['name' => 'exam', 'guard_name' =>  "api-staff"],
+                    ['name' => 'library', 'guard_name' =>  "api-staff"],
+                    ['name' => 'bursar', 'guard_name' =>  "api-staff"],
+                    ['name' => 'security', 'guard_name' =>  "api-staff"]
             ]); 
         */
 
         $permissions = collect($arrayOfPermissionNames)->map(function ($permission) {
-            return ['name' => $permission, 'guard_name' =>  "api:staff"];
+            return ['name' => $permission, 'guard_name' =>  "api-staff"];
         });
         Permission::insert($permissions->toArray());
 
         $admission_manager_permissions = Permission::whereIn('name',['can_give_admission', 'can_activate_student', 'can_view_applicants'])->get();        
-        $role = Role::create(['name' => 'admission_manager', 'guard_name' =>  "api:staff"])
+        $role = Role::create(['name' => 'admission_manager', 'guard_name' =>  "api-staff"])
             ->givePermissionTo($admission_manager_permissions );
         
         
-        $role = Role::create(['name' => 'super-admin', 'guard_name' =>  "api:staff"]);
+        $role = Role::create(['name' => 'super-admin', 'guard_name' =>  "api-staff"]);
         $role->givePermissionTo(Permission::all());
         $staff = Staff::find(1);
         if($staff){
             $staff->givePermissionTo(Permission::all());
-            Staff::find(2)->givePermissionTo(['can_give_admission', 'can_activate_student', 'can_view_applicants']);
+            Staff::find(1)->givePermissionTo(['can_give_admission', 'can_activate_student', 'can_view_applicants']);
 
         }
 

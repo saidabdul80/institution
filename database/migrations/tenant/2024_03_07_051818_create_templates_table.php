@@ -13,16 +13,14 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('documents', function (Blueprint $table) {
-            $table->id();         
-            $table->bigInteger('owner_id');
-            $table->bigInteger('document_type_id');
-            $table->enum('owner_type',['applicant','student']);
+        Schema::create('templates', function (Blueprint $table) {
+            $table->id();
             $table->string('name');
-            $table->string('url',500)->nullable();                        
-            $table->timestamps();
+            $table->longText('value');
+            $table->timestamps(); // This will automatically create the 'created_at' and 'updated_at' columns
         });
     }
+    
 
     /**
      * Reverse the migrations.
@@ -31,6 +29,7 @@ return new class extends Migration
      */
     public function down()
     {
-        //
+        Schema::dropIfExists('templates');
     }
+    
 };

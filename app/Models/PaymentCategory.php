@@ -21,7 +21,7 @@ class PaymentCategory extends Model
 
     public function scopePaymentId($query,$name){
         $data = $query->where("short_name", $name)->first();
-        return $data->id;
+        return $data?->id;
     }
 
   

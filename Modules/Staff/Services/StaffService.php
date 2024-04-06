@@ -30,8 +30,7 @@ class StaffService{
         if(!$existData){
             throw new Exception("Secured Not Found",404);
         }
-        $this->staffRepository->update($request);
-        return 'success';
+        return $this->staffRepository->update($request);    
 
     }
 

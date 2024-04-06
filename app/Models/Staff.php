@@ -87,8 +87,10 @@ class Staff  extends Authenticatable
     {
         return "{$this->first_name} {$this->middle_name} {$this->surname}";
     }
+    
 
     protected $appends = ['department', 'is_super_admin', 'role_permissions', 'full_name', 'all_permissions', 'role'];
+    public $appends_props = ['department', 'is_super_admin', 'role_permissions', 'full_name', 'all_permissions', 'role','roles','courses','permissions'];
 
     protected static function newFactory()
     {

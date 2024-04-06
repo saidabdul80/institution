@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
         $client->createPasswordGrantClient(null, 'Default password grant client', 'http://your.redirect.path');
         $client->createPersonalAccessClient(null, 'Default personal access client', 'http://your.redirect.path');
         $this->call([
+            StaffSeeder::class,
             ProgrammeSeeder::class,
             ApplicationStatusTableSeeder::class,
             ApplicationTypeTableSeeder::class,            

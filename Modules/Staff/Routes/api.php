@@ -298,6 +298,7 @@ Route::prefix('staff')->middleware('tenancy')->group(function() {
 
 
         Route::group(["prefix"=>"level"], function () {
+            Route::get('/', [CentralController::class, 'getLevels']);
             Route::post('/update', [CentralController::class, 'updateLevel']);
         });
 

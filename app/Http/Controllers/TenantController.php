@@ -21,8 +21,8 @@ class TenantController extends Controller
         
         try {
             $validatedData = $request->validate([
-                /* 'school_name' => 'required|string',
-                'domain' => 'required|string', */
+                'school_name' => 'required|string',
+                'domain' => 'required|string', 
                 'db_name' => 'required|string|unique:tenants,tenancy_db_name',
             ]);            
             
@@ -48,8 +48,7 @@ class TenantController extends Controller
                 $tenant = Tenant::create($tenantData);
                 // Associate the domain with the newly created tenant
                 $tenant->domains()->create(['domain' => $domain]);
-            }
-            
+            }        
 
             $tenant->run(function(){
                 Artisan::call('db:seed', [
@@ -58,12 +57,10 @@ class TenantController extends Controller
             });
             $this->generateTenantKeys($tenant);
             return new APIResource('Tenant created successfully', false, 200);
-        } catch (\Exception $e) {            
-            return $e;
-            return response()->json(['error' =>json_encode($e)], 500);
-        }catch(\Illuminate\Validation\ValidationException $e){            
-            return $e;
-            return response()->json(['error' => json_encode($e)], 500);
+        } catch (\Exception $e) {                        
+            return response()->json(['error' =>$e->getMessage()], 400);
+        }catch(\Illuminate\Validation\ValidationException $e){                        
+            return response()->json(['error' => $e->getMessage()], 400);
         }
 
         return response()->json(['message' => 'Tenant created successfully'], 200);

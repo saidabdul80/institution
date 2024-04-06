@@ -72,11 +72,26 @@ class StaffRepositories{
 
     public function update($request)
     {
+
         $id = $request->get('id');
         $data = $request->all();
+
+        
+        $staff = $this->staff::find($id);
+                
+        foreach($this->staff->appends_props as  $appends){
+            unset($data[$appends]);
+        }
         if(array_key_exists('password',$data)){
             unset($data['password']);
+        }        
+        foreach($data as $key => $value){
+            if($key != "id"){
+                $staff->$key = $value;
+            }
         }
+
+        $staff->save();        
 
         $this->staff->where('id',$id)->update($data);
         return 'success';
@@ -167,9 +182,8 @@ class StaffRepositories{
        return Staff::pluck('email')->toArray();
     }
 
-    public function getAcronym($host){
-        $school = Http::withHeaders(["xtenant" => $host])->get('https://api.jspnigeria.com/api/school-info')->json();
-        return $school['acronym'];
+    public function getAcronym($host){        
+            return tenant('short_name') == ''? 'NUM': tenant('short_name');
     }
 
     public function create($request,$num){

@@ -120,9 +120,7 @@ class StaffController extends Controller
                 "first_name" => "required",
                 "surname" => "required",
                 "gender" => "required",
-                "phone_number" => "required",
-                "faculty_id" => "required_if:type,==,academic",
-                "department_id" => "required_if:type,==,academic",
+                "phone_number" => "required",                
                 "type" => "required",
                 "staff_number" => "sometimes|nullable|unique:staffs,staff_number",
              ]);
