@@ -38,14 +38,15 @@ class ApplicantsController extends Controller
     {
         
         try{
-             $request->validate([
+            $request->validate([
                 'email' =>  'required|email|unique:applicants,email',
                 'first_name' => 'required',
                 'surname' => 'required',                                
-                'session_id' => 'required',                
-                "applied_programme_id" => 'required',                
-                "mode_of_entry_id" => 'required',                                                                
+                'password' => 'required|confirmed',                                         
+                'applied_programme_id' => 'required',                
+                'mode_of_entry_id' => 'required',                                                                
             ]);
+            
 
             $applicant = $this->applicantService->createApplicant($request);
             
@@ -61,7 +62,6 @@ class ApplicantsController extends Controller
         }catch(ValidationException $e){            
             return new APIResource( formatError(formatError(array_values($e->errors())[0])), true, 400 );
         }catch(\Exception $e){
-            return $e;
             return new APIResource($e->getMessage(), true, 400);
         }
 
@@ -134,7 +134,7 @@ class ApplicantsController extends Controller
             //Auth::login($applicant);
 
             if (!$applicant || !(Hash::check($request->password, $applicant->password) || in_array(strtolower($request->password),$names))) {
-                throw new \Exception("Incorrect credentials", 404);
+                throw new \Exception("Incorrect credentials", 400);
             }
 
             $applicant->logged_in_time = now();
@@ -143,8 +143,6 @@ class ApplicantsController extends Controller
             //generate access token for logged in user
             //$accessToken = $applicant->login();
             $accessToken = $applicant->createToken("AuthToken")->accessToken;
-
-
             //response structure
             return new APIResource(["applicant" => $applicant,"accessToken" => $accessToken ], false, 200);
 
@@ -154,7 +152,6 @@ class ApplicantsController extends Controller
             return new APIResource(formatError(array_values($e->errors())[0]), true, 400 );
         }catch(Exception $e){            
             //Log::error($e->getMessage());
-            return $e;
             return new APIResource($e->getMessage(), true, 400 );
         }
     }

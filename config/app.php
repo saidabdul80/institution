@@ -197,7 +197,6 @@ return [
         App\Providers\TenancyServiceProvider::class, // <-- here
 
 
-
     ],
 
     /*

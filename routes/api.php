@@ -73,11 +73,11 @@ Route::middleware('tenancy')->group(function () {
     Route::get('/programmes/{id?}', [CentralController::class, 'programme']);
 
     
-    Route::get('/templates', [TemplateController::class, 'index'])->name('templates.index');
-    Route::post('/templates', [TemplateController::class, 'store'])->name('templates.store');
-    Route::get('/templates/{template}', [TemplateController::class, 'show'])->name('templates.show');
-    Route::post('/templates/update', [TemplateController::class, 'update'])->name('templates.update');
-    Route::delete('/templates/{template}', [TemplateController::class, 'destroy'])->name('templates.destroy');
+    // Route::get('/templates', [TemplateController::class, 'index'])->name('templates.index');
+    // Route::get('/template/{template}', [TemplateController::class, 'show'])->name('templates.show');
+    // Route::post('/templates', [TemplateController::class, 'store'])->name('templates.store');
+    // Route::post('/templates/update', [TemplateController::class, 'update'])->name('templates.update');
+    // Route::delete('/templates/{template}', [TemplateController::class, 'destroy'])->name('templates.destroy');
 });
 
 Route::post('/save_school', [TenantController::class, 'createSchool']);

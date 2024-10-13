@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION_CENTRAL', 'DB_CONNECTION_CENTRAL'),
+    'default' => 'mysql',
 
     /*
     |--------------------------------------------------------------------------

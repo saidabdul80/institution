@@ -35,6 +35,7 @@ Route::prefix('applicants')->middleware('tenancy')->group(function() {
         Route::get('/alevel/{id}', [ApplicantsController::class, 'aLevelResult']);
         Route::get('/get_documents', [ApplicantsController::class, 'getDocuments']);
         
+       // Route::post('/create', [ApplicantsController::class, 'create']);
         Route::post('/update', [ApplicantsController::class, 'updateApplicant']);
         Route::post('/logout', [ApplicantsController::class, 'logout']);
         Route::post('/uploadPicture', [ApplicantsController::class, 'uploadPicture']);

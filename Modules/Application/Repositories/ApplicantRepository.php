@@ -104,7 +104,7 @@ use Throwable;
         $applicant->faculty_id = $faculty_id;
         $applicant->applied_programme_id = $request->get('applied_programme_id');
         $applicant->mode_of_entry_id = $request->get('mode_of_entry_id');
-        $applicant->password = Hash::make($this->configurationRepository->getValue('default_password'));
+        $applicant->password = Hash::make($request->password);
         $applicant->country_id = $request->get('country_id');
         $applicant->state_id = $request->get('state_id');
         $applicant->lga_id = $request->get('lga_id');

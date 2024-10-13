@@ -17,15 +17,15 @@ class TenantController extends Controller
 {
     public function createSchool(Request $request)
     {
-        // Validate the incoming request data
         
+        // Validate the incoming request data
         try {
             $validatedData = $request->validate([
                 'school_name' => 'required|string',
                 'domain' => 'required|string', 
-                'db_name' => 'required|string|unique:tenants,tenancy_db_name',
+                'db_name' => 'required',
             ]);            
-            
+
             // Create a new tenant                
             $tenantData = [
                 'school_name' => $request->get('school_name'),
@@ -34,6 +34,7 @@ class TenantController extends Controller
                 'country_id'=>160,//Nigeria
                 'tenancy_db_name' => $request->get('db_name')
             ];
+           
             
             $domain = $request->get('domain');
             
@@ -43,6 +44,10 @@ class TenantController extends Controller
             if ($tenant) {
                 // If the tenant exists, update its details
                 $tenant->update($tenantData);
+                //dd(3, $tenant->domains);
+                if(empty($tenant->domains->toArray())){
+                    $tenant->domains()->create(['domain' => $domain]);
+                }
             } else {
                 // If the tenant doesn't exist, create a new one
                 $tenant = Tenant::create($tenantData);
@@ -50,16 +55,18 @@ class TenantController extends Controller
                 $tenant->domains()->create(['domain' => $domain]);
             }        
 
-            $tenant->run(function(){
-                Artisan::call('db:seed', [
-                    '--class' => 'DatabaseSeeder',
-                ]);               
+            $tenant->run(function ($tenant) {
+                Artisan::call('tenants:migrate-fresh', ['--tenants' => $tenant->id]);
+                Artisan::call('db:seed');               
             });
+
             $this->generateTenantKeys($tenant);
             return new APIResource('Tenant created successfully', false, 200);
-        } catch (\Exception $e) {                        
+        } catch (\Exception $e) {                
+            return $e;
             return response()->json(['error' =>$e->getMessage()], 400);
-        }catch(\Illuminate\Validation\ValidationException $e){                        
+        }catch(\Illuminate\Validation\ValidationException $e){  
+            return $e;          
             return response()->json(['error' => $e->getMessage()], 400);
         }
 

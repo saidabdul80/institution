@@ -138,7 +138,7 @@ class Applicant extends Authenticatable
     public function getQualifyAttribute() {
         $olevelResuts = OlevelResult::where('applicant_id',$this->id)->pluck('subjects_grades');
         $programme = Programme::where('id',$this->applied_programme_id)->first();
-        $subjects = !empty($programme?->required_subjects)? explode(',',$programme?->required_subjects):[];
+        $subjects = !empty($programme?->required_subjects)? (is_array($programme?->required_subjects)?$programme?->required_subjects: explode(',',$programme?->required_subjects)):[];
         $grades =   !empty($programme?->accepted_grades)? collect(explode(',',$programme?->accepted_grades))->map(function($item){
                                                                     return strtolower($item);
                                                                 })->toArray():[];
