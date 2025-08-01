@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+
+use App\Models\Payment;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Artisan;
 use Laravel\Passport\ClientRepository;
@@ -21,6 +23,7 @@ class DatabaseSeeder extends Seeder
         $client->createPasswordGrantClient(null, 'Default password grant client', 'http://your.redirect.path');
         $client->createPersonalAccessClient(null, 'Default personal access client', 'http://your.redirect.path');
         $this->call([
+            PaymentCategorySeeder::class,
             StaffSeeder::class,
             ProgrammeSeeder::class,
             ApplicationStatusTableSeeder::class,

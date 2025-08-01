@@ -13,11 +13,11 @@ class PaymentCategory extends Model
     protected $table = "payment_categories";
     protected $fillable = ["*"];
     public $timestamps = false;
-    public function __construct($attributes = array())
-    {
-        parent::__construct($attributes);
-        $this->connection = "mysql";        
-    }
+    // public function __construct($attributes = array())
+    // {
+    //     parent::__construct($attributes);
+    //     $this->connection = "school";        
+    // }
 
     public function scopePaymentId($query,$name){
         $data = $query->where("short_name", $name)->first();
