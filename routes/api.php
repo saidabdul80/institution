@@ -21,7 +21,7 @@ use Modules\HostelPortalAPI\Http\Controllers\PaymentsController;
 use Modules\Staff\Http\Controllers\FacultyController;
 use Modules\Staff\Http\Controllers\DepartmentController;
 use Modules\Staff\Http\Controllers\CourseController;
-use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
+//use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,7 +38,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::middleware('tenancy')->group(function () {
+//Route::middleware('tenancy')->group(function () {
     Route::post('/export-db', [ExportController::class,'exportData']);
     Route::get('school-info', [CentralController::class,'getSchoolInfo']);    
     Route::get('/faculties', [FacultyController::class, 'getFaculties']);
@@ -51,7 +51,8 @@ Route::middleware('tenancy')->group(function () {
     Route::get('/subjects', [CentralController::class, 'getSubjects']);
     Route::get('/levels', [CentralController::class, 'getLevels']);
     Route::get('/exam_types', [CentralController::class, 'getExamTypes']);
-    Route::get('/certifacte_types', [CentralController::class, 'getCertificateType']);
+    Route::get('/certificate_types', [CentralController::class, 'getCertificateTypes']);
+    Route::get('/olevel_grades', [CentralController::class, 'getOLevelGrades']);
     
     Route::post('/invoice-pdf', [PDFController::class, 'downloadInvoice']);
     Route::post('/receipt-pdf', [PDFController::class, 'downloadPaymentReceipt']);
@@ -78,7 +79,7 @@ Route::middleware('tenancy')->group(function () {
     // Route::post('/templates', [TemplateController::class, 'store'])->name('templates.store');
     // Route::post('/templates/update', [TemplateController::class, 'update'])->name('templates.update');
     // Route::delete('/templates/{template}', [TemplateController::class, 'destroy'])->name('templates.destroy');
-});
+//});
 
 Route::post('/save_school', [TenantController::class, 'createSchool']);
 

@@ -16,7 +16,7 @@ class PaymentCategory extends Model
     public function __construct($attributes = array())
     {
         parent::__construct($attributes);
-        $this->connection = "mysql";        
+        //$this->connection = "mysql";        
     }
 
     public function scopePaymentId($query,$name){

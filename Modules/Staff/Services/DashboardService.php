@@ -1,9 +1,13 @@
 <?php
 namespace Modules\Staff\Services;
 
+use App\Models\Applicant;
+use App\Models\Course;
+use App\Models\Staff;
 use Modules\Staff\Repositories\DashboardRepository;
 use Exception;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use Modules\Staff\Services\Utilities;
 
 class DashboardService extends Utilities{
@@ -68,6 +72,7 @@ class DashboardService extends Utilities{
 
     public function info($request){
 
+        
         $session_id = $request->get('session_id');
         $totalActiveStaff    = $this->dashboardRepository->getTotalActiveStaff();
         $totalNonActiveStaff    = $this->dashboardRepository->totalNonActiveStaff();
@@ -92,6 +97,8 @@ class DashboardService extends Utilities{
 
         $data['non_active_applicant'] = $totalNonActiveApplicant;
         $data['active_applicant'] = $totalActiveApplicant;
+        $data['total_courses'] = Course::count();
+        $data['total_staff'] = Staff::count();
         return $data;
     }
 

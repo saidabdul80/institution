@@ -2,6 +2,7 @@
 
 namespace Modules\Staff\Http\Controllers;
 
+use App\Http\Resources\APIResource;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;

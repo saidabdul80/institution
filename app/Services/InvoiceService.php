@@ -122,8 +122,8 @@ class InvoiceService
             throw new \Exception("This payment has not been setup", 400);
         }
 
-        $tenantCharge = TenantPaymentCharge::where(["payment_category_id" => $payment_category_id, "tenant_id" => tenant('id')])->first();
-        $charges = $tenantCharge->resolveCharges($invoice_type->amount);        
+        //$tenantCharge = TenantPaymentCharge::where(["payment_category_id" => $payment_category_id, "tenant_id" => tenant('id')])->first();
+        $charges = 500;        
         $invoiceDetails = [
             'invoice_number' => generateInvoiceNumber(),
             'owner_id' => $user->id,

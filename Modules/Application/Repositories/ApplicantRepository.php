@@ -42,6 +42,7 @@ use Throwable;
     private $applicantQualification;
     private $configurationRepository;
     private $level;
+    public $fields;
     public function __construct(Applicant $applicant, OlevelResult $olevelresult, Alevel $alevel, ApplicantCertificate $applicantCertificate, ApplicantQualification $applicantQualification,InvoiceType $invoiceType,PaymentCategory $paymentCategory, Faculty $faculty, Utilities $utilities, ConfigurationRepository $configurationRepository, Level $level)
     {
         $this->applicant = $applicant;
@@ -55,6 +56,11 @@ use Throwable;
         $this->utilities = $utilities;
         $this->configurationRepository = $configurationRepository;
         $this->level = $level;
+
+        $this->fields = [
+            "first_name", "middle_name", "surname", "phone_number", "gender", "email", "application_number", "batch_id", "session_id", "lga_id", "country_id", "state_id", "applied_level_id", "level_id", "applied_programme_id", "programme_id", "programme_type_id", "mode_of_entry_id", "application_status_id", "department_id", "faculty_id", "date_of_birth", "years_of_experience", "working_class", "category", "present_address", "permanent_address", "guardian_full_name", "guardian_phone_number", "guardian_address", "guardian_email", "guardian_relationship", "sponsor_full_name", "sponsor_type", "sponsor_address", "next_of_kin_full_name", "next_of_kin_address", "next_of_kin_phone_number", "next_of_kin_relationship", "wallet_number", "prev_institution", "prev_year_of_graduation", "health_status", "health_status_description", "blood_group", "disability", "religion", "marital_status", "admission_status", "admission_serial_number", "qualified_status", "final_submission", "application_progress", "logged_in_time", "logged_in_count", "picture", "signatuare", "jamb_number", "scratch_card", "entrance_exam_score", "entrance_exam_status", "deleted_at", "deleted_by", "password", "created_at", "updated_at",
+            "jamb_score"
+        ];
     }
 
     public function searchUserBy($column_name, $value){
@@ -77,7 +83,8 @@ use Throwable;
     public function create($request, $num){
 
         $faculty_id = DB::table("departments")->where("id",$request->get('department_id'))->first()?->faculty_id;
-        /*         $application_number_format = DB::table('configurations')->where(['name'=>'application_number_format','programme_type_id'=>$request->get('programme_type_id')])->first();
+        /* 
+         $application_number_format = DB::table('configurations')->where(['name'=>'application_number_format','programme_type_id'=>$request->get('programme_type_id')])->first();
         */ 
         $current_application_session = (int) DB::table('configurations')->where('name','current_application_session')->first()?->value;
                
@@ -109,7 +116,6 @@ use Throwable;
         $applicant->state_id = $request->get('state_id');
         $applicant->lga_id = $request->get('lga_id');
         $applicant->applied_level_id = $request->get('applied_level_id') ?? null;
-        $applicant->mode_of_entry_id = $request->get('mode_of_entry_id');
         $applicant->application_status_id = $request->get('application_status_id');
         $applicant->jamb_number = $request->get('jamb_number')??null;
         $applicant->scratch_card = $request->get('scratch_card')??null;
@@ -183,7 +189,12 @@ use Throwable;
                 unset($data["applied_programme_id"]);
             }
         }
-        $user = $this->applicant->where('id',$id)->update($data);
+        $filteredData = array_filter($data, function ($key) {
+                return in_array($key, $this->fields);
+            }, ARRAY_FILTER_USE_KEY);
+
+
+        $user = $this->applicant->where('id',$id)->update($filteredData);
         
         if($user){
             $user = $this->applicant::find($id);
@@ -336,7 +347,7 @@ use Throwable;
 
     
     public function getDocuments($request){
-        return DB::table('documents')->where(["applicant_id"=> $request->user()?->id])->get();
+        return DB::table('documents')->where(["owner_id"=> $request->user()?->id,'owner_type'=>"applicant"])->get();
     }   
 
     public function checkDocument($applicant_id, $name){

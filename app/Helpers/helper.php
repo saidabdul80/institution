@@ -13,6 +13,11 @@ function generateTrxId(){
     return $number;
 }
 
+
+function isValidEmail($email) {
+    return preg_match("/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/", $email);
+}
+
 function formatError($errors){
     return collect($errors)->first();
 }

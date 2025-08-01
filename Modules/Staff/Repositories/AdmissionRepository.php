@@ -258,7 +258,7 @@ class AdmissionRepository{
     }
 
     public function admissionBatches($session_id){
-        return DB::table('students')->distinct()->where('session_id', $session_id)->get(['batch']);
+        return Student::distinct()->where('session_id', $session_id)->get()->pluck('batch');
     }
 
 

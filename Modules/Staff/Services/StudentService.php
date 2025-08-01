@@ -97,20 +97,94 @@ class StudentService{
         
     }
 
-    public function exportStudents($request){      
+    public function exportStudents($request){
         $filters = $request->get('filters') ?? [];
-        $filters['custom_fields'] = true;                
-        
+        $filters['custom_fields'] = true;
+
         $students= $this->studentRepository->getStudentsWithoutAppends($filters);
         if ($students->isEmpty()) {
             throw new \Exception('No records found', 404);
         }
-        
-        // Split the applicants into chunks of 1000 or less        
+
+        // Split the applicants into chunks of 1000 or less
         $response = Excel::download(new Export($students), 'students.xlsx');
         ob_end_clean();
-        return  $response;                          
+        return  $response;
 
+    }
+
+    /**
+     * Get student statistics
+     */
+    public function getStudentStats($request)
+    {
+        $sessionId = $request->get('session_id');
+        return $this->studentRepository->getStudentStats($sessionId);
+    }
+
+    /**
+     * Create new student
+     */
+    public function createStudent($request)
+    {
+        return $this->studentRepository->createStudent($request->all());
+    }
+
+    /**
+     * Bulk upload students
+     */
+    public function bulkUploadStudents($request)
+    {
+        $file = $request->file('file');
+        $sessionId = $request->get('session_id');
+        $levelId = $request->get('level_id');
+        $programmeId = $request->get('programme_id');
+
+        return $this->studentRepository->bulkUploadStudents($file, $sessionId, $levelId, $programmeId);
+    }
+
+    /**
+     * Get student by ID
+     */
+    public function getStudentById($studentId)
+    {
+        return $this->studentRepository->getStudentById($studentId);
+    }
+
+    /**
+     * Get student courses
+     */
+    public function getStudentCourses($studentId, $sessionId = null, $semester = null)
+    {
+        return $this->studentRepository->getStudentCourses($studentId, $sessionId, $semester);
+    }
+
+    /**
+     * Get student results
+     */
+    public function getStudentResults($studentId, $sessionId = null, $semester = null)
+    {
+        return $this->studentRepository->getStudentResults($studentId, $sessionId, $semester);
+    }
+
+    /**
+     * Search students
+     */
+    public function searchStudents($request)
+    {
+        $searchType = $request->get('search_type');
+        $query = $request->get('query');
+        $limit = $request->get('limit', 50);
+
+        return $this->studentRepository->searchStudents($searchType, $query, $limit);
+    }
+
+    /**
+     * Get student academic records
+     */
+    public function getStudentAcademicRecords($studentId)
+    {
+        return $this->studentRepository->getStudentAcademicRecords($studentId);
     }
 
     

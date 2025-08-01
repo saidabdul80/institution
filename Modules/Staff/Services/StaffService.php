@@ -157,7 +157,10 @@ class StaffService{
     }
 
     public function staffs($request){
-        $paginateBy = $request->get('paginateBy')??30;
+        $paginateBy = null;
+        if($request->has('paginate')){
+            $paginateBy = $request->get('paginateBy')??30;
+        }
         $search = $request->get('search')??"";
 
        return $this->staffRepository->getStaffs($search,$paginateBy, $request->session_id);
@@ -249,7 +252,15 @@ class StaffService{
         $response = $this->staffRepository->staffCourses($request->get('paginateBy'),$request->get('search'));
         return $response;
     }
-    
+
+    public function getAllStaffWithCourses($request)
+    {
+        $session_id = $request->get('session_id');
+        $search = $request->get('search');
+
+        return $this->staffRepository->getAllStaffWithCourses($session_id, $search);
+    }
+
 
 }
 

@@ -44,7 +44,7 @@ class ApplicantsController extends Controller
                 'surname' => 'required',                                
                 'password' => 'required|confirmed',                                         
                 'applied_programme_id' => 'required',                
-                'mode_of_entry_id' => 'required',                                                                
+                'mode_of_entry_id' => 'nullable',                                                                
             ]);
             
 
@@ -62,6 +62,7 @@ class ApplicantsController extends Controller
         }catch(ValidationException $e){            
             return new APIResource( formatError(formatError(array_values($e->errors())[0])), true, 400 );
         }catch(\Exception $e){
+            Log::error($e);
             return new APIResource($e->getMessage(), true, 400);
         }
 
@@ -193,12 +194,12 @@ class ApplicantsController extends Controller
     public function getApplicantById(Request $request){
         try{
 
-            Validator::make($request->all(), [
-                'id' => 'required',
-            ]);
-            $response = $this->applicantService->byID($request);
+            // Validator::make($request->all(), [
+            //     'id' => 'required',
+            // ]);
+            // $response = $this->applicantService->byID($request);
 
-            return new APIResource($response, false, 200 );
+            return new APIResource($request->user(), false, 200 );
         }catch(ValidationException $e){
             return new APIResource(formatError(array_values($e->errors())[0]), true, 400 );
         }catch(Exception $e){

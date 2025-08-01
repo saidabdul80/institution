@@ -97,5 +97,9 @@ class Staff  extends Authenticatable
         //return \Modules\SecuredPanelAPI\Database\factories\StaffFactory::new();
     }
 
+    public function staffCourses()
+    {
+        return $this->hasMany(StaffCourse::class);
+    }
     
 }

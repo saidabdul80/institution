@@ -135,7 +135,12 @@ class StaffRepositories{
 
         $staffs = $this->staff->search($search)->with(['courses'=>function($query) use($session_id){
             $query->where('session_id', $session_id);
-        },'permissions'])->latest()->paginate($paginateBy);
+        },'permissions'])->latest();
+        if($paginateBy){
+            $staffs = $staffs->paginate($paginateBy);
+        }else{
+            $staffs = $staffs->get();
+        }
         return $staffs;
     }
 
@@ -468,6 +473,66 @@ class StaffRepositories{
     public function staffCourses($paginate,$search=null){
         $paginate = $paginate??30;
         return StaffCourse::search($search)->latest()->paginate($paginate);
+    }
+
+    public function getAllStaffWithCourses($session_id = null, $search = null) {
+        $query = $this->staff::
+        // with(['department', 'faculty'])
+        //     ->
+            withCount(['staffCourses' => function($query) use ($session_id) {
+                if ($session_id) {
+                    $query->where('session_id', $session_id);
+                }
+            }])
+            ->with(['staffCourses' => function($query) use ($session_id) {
+                $query->with(['course', 'programme', 'session', 'semester']);
+                if ($session_id) {
+                    $query->where('session_id', $session_id);
+                }
+            }]);
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('surname', 'like', "%{$search}%")
+                  ->orWhere('staff_number', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        return $query->get()->map(function($staff) {
+            return [
+                'id' => $staff->id,
+                'first_name' => $staff->first_name,
+                'surname' => $staff->surname,
+                'middle_name' => $staff->middle_name,
+                'staff_number' => $staff->staff_number,
+                'email' => $staff->email,
+                'phone' => $staff->phone,
+                'department_name' => $staff->department->name ?? null,
+                'faculty_name' => $staff->faculty->name ?? null,
+                'department_id' => $staff->department_id,
+                'faculty_id' => $staff->faculty_id,
+                'status' => $staff->status ?? 'active',
+                'total_courses' => $staff->staff_courses_count,
+                'assigned_courses' => $staff->staffCourses->map(function($staffCourse) {
+                    return [
+                        'id' => $staffCourse->id,
+                        'course_id' => $staffCourse->course_id,
+                        'course_code' => $staffCourse->course->code ?? 'N/A',
+                        'course_title' => $staffCourse->course->title ?? 'N/A',
+                        'course_name' => $staffCourse->course->title ?? 'N/A',
+                        'programme_name' => $staffCourse->programme->name ?? 'N/A',
+                        'session_name' => $staffCourse->session->name ?? 'N/A',
+                        'semester_name' => $staffCourse->semester->name ?? 'N/A',
+                        'session_id' => $staffCourse->session_id,
+                        'programme_id' => $staffCourse->programme_id,
+                        'semester_id' => $staffCourse->semester_id,
+                        'status' => 'assigned'
+                    ];
+                })
+            ];
+        });
     }
 
 }

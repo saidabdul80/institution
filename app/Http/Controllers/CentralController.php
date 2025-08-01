@@ -29,6 +29,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceType;
 use App\Models\Payment;
 use App\Models\PaymentCategory;
+use App\Models\PaymentGateway;
 use App\Models\Semester;
 use App\Models\Session;
 use App\Models\Student;
@@ -76,13 +77,15 @@ class CentralController extends Controller
                 "logo" =>$logo,
                 "school_name" =>$school_name,
                 "school_short_name" =>$school_short_name,
-                "configurations"=> Configuration::all()
+                "configurations"=> Configuration::all(),
+                'gateways' => PaymentGateway::getAll(100),
             ];
     
             return new APIResource($response, false,200);
         } catch (\Exception $e) {
             return new APIResource($e, true,400);
         }
+        
     }
 
     public function country()
@@ -114,10 +117,10 @@ class CentralController extends Controller
     function state(Request $request)
     {
         try {
-            $country_id = $request->country_id ?? '';
-            if ($country_id == '') {
-                throw new \Exception('country_id is required');
-            }
+            $country_id = $request->country_id ?? 160;
+            // if ($country_id == '') {
+            //     throw new \Exception('country_id is required');
+            // }
             $response = $this->state::with('lga')->where('country_id', $country_id)->get();
             return new APIResource($response, false, 200);
 /* 
@@ -243,6 +246,38 @@ class CentralController extends Controller
         try {
             $response = ExamType::all();
             return new APIResource($response, false, 200);
+        } catch (\Exception $e) {
+            return new APIResource($e->getMessage(), true, 400);
+        }
+    }
+
+    function getCertificateTypes()
+    {
+        try {
+            $response = CertificateType::all();
+            return new APIResource($response, false, 200);
+        } catch (\Exception $e) {
+            return new APIResource($e->getMessage(), true, 400);
+        }
+    }
+
+    function getOLevelGrades()
+    {
+        try {
+            // Standard Nigerian O-Level grades
+            $grades = [
+                ['value' => 'A1', 'label' => 'A1 (Excellent)', 'points' => 9],
+                ['value' => 'B2', 'label' => 'B2 (Very Good)', 'points' => 8],
+                ['value' => 'B3', 'label' => 'B3 (Good)', 'points' => 7],
+                ['value' => 'C4', 'label' => 'C4 (Credit)', 'points' => 6],
+                ['value' => 'C5', 'label' => 'C5 (Credit)', 'points' => 5],
+                ['value' => 'C6', 'label' => 'C6 (Credit)', 'points' => 4],
+                ['value' => 'D7', 'label' => 'D7 (Pass)', 'points' => 3],
+                ['value' => 'E8', 'label' => 'E8 (Pass)', 'points' => 2],
+                ['value' => 'F9', 'label' => 'F9 (Fail)', 'points' => 1]
+            ];
+
+            return new APIResource($grades, false, 200);
         } catch (\Exception $e) {
             return new APIResource($e->getMessage(), true, 400);
         }

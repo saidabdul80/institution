@@ -21,7 +21,7 @@ use App\Http\Resources\APIResource;
 
 
 //Application Portal Routes #########################
-Route::prefix('applicants')->middleware('tenancy')->group(function() {
+Route::prefix('applicants')->group(function() {
 
     Route::post('/login', [ApplicantsController::class, 'login']);
     Route::get('/login', function (){
@@ -31,7 +31,7 @@ Route::prefix('applicants')->middleware('tenancy')->group(function() {
 
     Route::group(["middleware" => ['auth:api-applicants']], function () {
         Route::get('/registration_progress/{applicant_id}', [ApplicantsController::class, 'registrationProgress']);
-        //Route::get('/{id}', [ApplicantsController::class, 'getApplicantById']);
+        Route::get('/self', [ApplicantsController::class, 'getApplicantById']);
         Route::get('/alevel/{id}', [ApplicantsController::class, 'aLevelResult']);
         Route::get('/get_documents', [ApplicantsController::class, 'getDocuments']);
         
@@ -51,7 +51,7 @@ Route::prefix('applicants')->middleware('tenancy')->group(function() {
         Route::group(["prefix"=>"invoices"], function () {
             Route::get('/', [PaymentController::class, 'getApplicantInvoices']);
             Route::post('/generate', [CentralInvoiceController::class, 'generateInvoice']);
-            Route::post('/initiate_payment', [CentralPaymentController::class, 'initiatePayment']);
+            Route::post('/initiate_payment', [CentralPaymentController::class, 'redirectToGateway']);
         });
 
         

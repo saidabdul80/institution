@@ -621,6 +621,17 @@ class ConfigurationTableSeeder extends Seeder
                 "programme_type_id"=>'',
                 "updated_by"=>"",          
             ],
+            [
+                'name'=>'enable_split_payment', 
+                'value'=>'true',
+                'field_type'=> 'radio',
+                "model"=> "",                
+                "seeds" => 'true,false',      
+                "description"=>"",
+                "programme_type_id"=>'',
+                "updated_by"=>"",          
+            ],
+            
             
 
         ]);

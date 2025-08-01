@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Validator;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Modules\Staff\Services\StaffService;
 use Modules\Staff\Services\Utilities;
 use Modules\Staff\Transformers\UtilResource;
@@ -156,6 +157,7 @@ class StaffController extends Controller
         }catch(ValidationException $e){
             return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
+            Log::error($e);
             return new APIResource($e->getMessage(), true, 400 );
         }
     }
@@ -506,6 +508,16 @@ class StaffController extends Controller
             return new APIResource($e->getMessage(), true, 400 );
         }
 
+    }
+
+    public function getAllStaffWithCourses(Request $request){
+        try{
+            $response = $this->staffService->getAllStaffWithCourses($request);
+            return new APIResource($response, false, 200 );
+
+        }catch(Exception $e){
+            return new APIResource($e->getMessage(), true, 400 );
+        }
     }
 
     public function updatePassword(Request $request){

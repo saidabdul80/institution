@@ -68,7 +68,7 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,      
         "configuration" =>  \App\Http\Middleware\ConfigurationPermission::class,
         'idempotency' => \App\Http\Middleware\Idempotency::class,
-        'tenancy'=> \App\Http\Middleware\InitializeTenancy::class,
+        //'tenancy'=> \App\Http\Middleware\InitializeTenancy::class,
         'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
         'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
         'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,

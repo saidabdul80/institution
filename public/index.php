@@ -16,6 +16,7 @@ define('LARAVEL_START', microtime(true));
 |
 */
 
+error_reporting(error_reporting() & ~E_DEPRECATED);
 if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
     require $maintenance;
 }

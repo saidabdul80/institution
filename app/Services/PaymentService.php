@@ -46,12 +46,13 @@ class PaymentService
         $paymentDetails['email'] = $request->user()->email; 
         $paymentDetails['phone_number'] = $request->user()->phone_number; 
         $paymentDetails['full_name'] = $request->user()->full_name; 
-        $paymentDetails['owner_type'] = $request->user()->user_type; 
-        if (isset($paymentDetails['payment_category'])) {
-            return $this->initiateInvoicePayment($paymentDetails, $callback_url);
-        } else {
-            return $this->initiateLoadWallet($paymentDetails, $callback_url);
-        }
+        $paymentDetails['owner_type'] = get_class($request->user()); 
+        $paymentDetails['invoice_id'] = $request->invoice_id;
+        return $this->initiateInvoicePayment($paymentDetails, $callback_url);
+        // if (isset($paymentDetails['payment_category'])) {
+        // } else {
+        //     return $this->initiateLoadWallet($paymentDetails, $callback_url);
+        // }
     }
 
     public function initiateInvoicePayment($paymentDetails, $callback_url = null)

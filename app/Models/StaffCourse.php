@@ -81,6 +81,26 @@ class StaffCourse extends Model
         return $this->belongsTo(Staff::class,'staff_id','id');
     }
 
+    public function programme(){
+        return $this->belongsTo(Programme::class,'programme_id','id');
+    }
+
+    public function department(){
+        return $this->belongsTo(Department::class,'department_id','id');
+    }
+
+    public function faculty(){
+        return $this->belongsTo(Faculty::class,'faculty_id','id');
+    }
+
+    public function semester(){
+        return $this->belongsTo(Semester::class,'semester_id','id');
+    }
+    
+    public function session(){
+        return $this->belongsTo(Session::class,'session_id','id');
+    }
+
     public function scopeSearch($query, $search)
     {
         $query->whereHas('course',function($course) use($search){            

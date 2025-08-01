@@ -18,7 +18,8 @@
         "nwidart/laravel-modules": "^9.0",
         "spatie/laravel-permission": "^6.3",
         "stancl/tenancy": "^3.7",
-        "tucker-eric/eloquentfilter": "^3.3"
+        "tucker-eric/eloquentfilter": "^3.3",
+        "unicodeveloper/laravel-paystack": "^1.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",

@@ -120,7 +120,7 @@ class DashboardRepository
 
     public function getTotalNonActiveStudent()
     {
-        return $this->student->onlyTrashed()->count();
+        return $this->student->whereNotNull('deleted_at')->count();
     }
 
     public function getTotalActiveStudent()

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Artisan;
 use Laravel\Passport\ClientRepository;
 
 class DatabaseSeeder extends Seeder
@@ -41,5 +42,7 @@ class DatabaseSeeder extends Seeder
             SubjectSeeder::class,
             AdmissionBatch::class,
         ]);
+
+        Artisan::call('passport:keys --force');
     }
 }

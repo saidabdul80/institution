@@ -4,12 +4,14 @@ namespace App\Models;
 
 
 use App\Traits\Utils;
+use Carbon\Carbon;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\SoftDeletes;
 //use Illuminate\Support\Facades\DB;
 use EloquentFilter\Filterable;
+use Illuminate\Support\Facades\Log;
 
 class Applicant extends Authenticatable
 {
@@ -50,15 +52,15 @@ class Applicant extends Authenticatable
     }
 
     public function programme(){
-        return $this->hasOne(Programme::class);
+        return $this->belongsTo(Programme::class);
     }
 
     public function level(){
-        return $this->hasOne(Level::class);
+        return $this->belongsTo(Level::class);
     }
 
     public function entryMode(){
-        return $this->hasOne(EntryMode::class);
+        return $this->belongsTo(EntryMode::class,'mode_of_entry_id');
     }
 
     public function applicationType(){
@@ -69,10 +71,16 @@ class Applicant extends Authenticatable
         return $this->hasOne(ApplicationStatus::class);
     }
 
-    public function qualifications(){
+    public function qualifications(){   
         return $this->hasMany(ApplicantQualification::class,'applicant_id');
     }
 
+    public function session(){
+        return $this->belongsTo(Session::class);
+    }
+    public function getSubmittedDateAgoAttribute(){
+        return Carbon::parse($this->created_at)->diffForHumans();
+    }
     public function getQualificationAttribute()
     {
         return Qualification::find($this->prev_qualification_id)?->name;
@@ -149,25 +157,34 @@ class Applicant extends Authenticatable
         if(empty($subjects)){
             return ["is_qualify"=>true, "info" => 'no required subjects set'];
         }
+        foreach ($olevelResuts as $key => $olevelResut) {
+            // Ensure $result is always an array
+            if (is_string($olevelResut)) {
+                $result = json_decode($olevelResut, true); // Add true for associative array
+            } else {
+                $result = (array) $olevelResut; // Cast to array if not already
+            }
 
-        foreach($olevelResuts as $key => $olevelResut){
+            // Skip invalid results
+            if (!is_array($result)) {
+                continue;
+            }
 
-            //first and second result
-            $oResult = collect((array) $olevelResut)->flatMap(function (array $values) {
+            // Safely process results
+            $oResult = collect($result)->flatMap(function ($values) {
+                // Ensure $values is an array before mapping
+                $values = is_array($values) ? $values : (array) $values;
                 return array_map('strtolower', $values);
             });
-            foreach($subjects as $subject){
-                //the required subjects
-                if($oResult->has(str_replace('"','',ucfirst($subject)))){
-                    //applicant has the required subjects
-                    if(in_array($oResult[$subject],$grades)){
-                        //applicant pass the required subjects
-                        $key==0? $checkSubject[$subject] = 1: $checkSubject2[$subject] = 1;
-                    }else{
-                        $key==0? $checkSubject[$subject] = 0: $checkSubject2[$subject] = 0;
-                    }
-                }else{
-                    $key==0? $checkSubject[$subject] = 0: $checkSubject2[$subject] = 0;
+
+            foreach ($subjects as $subject) {
+                $subjectKey = str_replace('"', '', ucfirst($subject));
+                $subjectExists = $oResult->has($subjectKey);
+
+                if ($subjectExists && in_array($oResult[$subjectKey], $grades)) {
+                    $checkSubject[$subject] = $key == 0 ? 1 : ($checkSubject2[$subject] = 1);
+                } else {
+                    $checkSubject[$subject] = $key == 0 ? 0 : ($checkSubject2[$subject] = 0);
                 }
             }
         }
@@ -248,5 +265,5 @@ class Applicant extends Authenticatable
         return $query;
     }
 
-    protected $appends = ['matric_number','qualify' ,'level', 'programme_name', 'programme_type','entry_mode', 'active_state', 'state','country','faculty','department','lga', 'qualification', 'full_name','admitted_programme_name','user_type'];
+    protected $appends = ['matric_number','qualify' ,'level', 'programme_name', 'programme_type','entry_mode', 'active_state', 'state','country','faculty','department','lga', 'qualification', 'full_name','admitted_programme_name','user_type','submitted_date_ago'];
 }

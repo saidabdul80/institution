@@ -111,7 +111,34 @@ class ApplicantsService{
     public function uploadThisPicture($request){
         $file = $request->file('file');
         $applicant_id = auth('api:applicantsportal')->id();
-        $url = cloudinary()->uploadFile($file->getRealPath(), ['tags' => $request->school_id.", passport, applicant, ".$applicant_id])->getSecurePath();
+        $disk = env('FILESYSTEM_DISK', 'public');
+
+        if (!$file) {
+            throw new \Exception('No file uploaded.');
+        }
+
+        // Validate file type and size
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+        if (!in_array($file->getMimeType(), $allowedTypes)) {
+            throw new \Exception('Invalid file type. Only JPEG, PNG files are allowed.');
+        }
+
+        if ($file->getSize() > 2048000) { // 2MB limit
+            throw new \Exception('File size too large. Maximum size is 2MB.');
+        }
+
+        // Store the file on the specified disk and get the path
+        $filePath = Storage::disk($disk)->putFile('profile-pictures', $file);
+        $url = Storage::disk($disk)->url($filePath);
+
+        // Delete old profile picture if exists
+        $currentUser = auth('api:applicantsportal')->user();
+        if ($currentUser->picture) {
+            $oldPath = str_replace(Storage::disk($disk)->url(''), '', $currentUser->picture);
+            Storage::disk($disk)->delete($oldPath);
+        }
+
+        // Update applicant record with new picture URL
         if($this->applicantRepository->update(["picture"=>$url],$applicant_id)){
             return auth('api:applicantsportal')->user();
         };

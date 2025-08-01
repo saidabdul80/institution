@@ -26,26 +26,25 @@ class InitializeTenancy extends IdentificationMiddleware
     public function handle($request, Closure $next)
     {
         try {
-            
-            if ($request->hasHeader('x-tenant')) {
+            if ($request->header('x-tenant')) {
                 $hostname = $request->header('x-tenant');
                 if ($this->isSubdomain($hostname)) {
                     $subdomain = $this->makeSubdomain($hostname);                
                     return $this->initializeTenancy($request, $next, $subdomain);
                 } else {
-                        
                     return $this->initializeTenancy($request, $next, $hostname);
                 }
             }
 
             
-                return app(InitializeTenancyByDomainOrSubdomain::class)->handle($request, $next);
+            return app(InitializeTenancyByDomainOrSubdomain::class)->handle($request, $next);
             
         }catch (\Exception $e) {
             
-            return response()->json(['error' =>$e->getMessage()], 500);
-        }catch (TenantCouldNotBeIdentifiedException $e) {            
-            return response()->json(['error' => 'Tenant could not be identified.'], 500);
+            return response()->json(['error' =>$e->getMessage()], 400);
+        }catch (TenantCouldNotBeIdentifiedException $e) {          
+
+            return response()->json(['error' => 'Tenant could not be identified:'. $e->getMessage()], 400);
         }
     }
 

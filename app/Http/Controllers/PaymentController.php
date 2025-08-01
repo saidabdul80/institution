@@ -3,17 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ApiResource;
+use App\Models\Invoice;
+use App\Models\Payment;
+use App\Services\PaymentGateway\GatewayFactory;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
 use Exception;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Unicodeveloper\Paystack\Facades\Paystack;
 
 class PaymentController extends Controller
 {
     protected $paymentService;
 
+    protected $gatewayFactory;
+    
     public function __construct(PaymentService $paymentService)
     {
+        $this->gatewayFactory = new GatewayFactory;
         $this->paymentService = $paymentService;
     }
 
@@ -39,7 +49,7 @@ class PaymentController extends Controller
     public function requery(Request $request)
     {
         try {
-            $requery = $this->paymentService->requery($request->payment_reference);
+            $requery = $this->paymentService->requery($request->reference);
             return new ApiResource($requery, false, 200);
         } catch (Exception $e) {
             return new ApiResource($e->getMessage(), true, 400);
@@ -69,4 +79,146 @@ class PaymentController extends Controller
             return new ApiResource($e->getMessage(), true, $e->getCode());
         }
     }
+
+     public function redirectToGateway(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'invoice_id' => 'required',
+            'gateway' => 'required|string',
+            'reference' => 'nullable|string',
+        ]);
+        
+        $user = $request->user();
+        $invoice_id = $request->invoice_id;
+        
+        $invoice = Invoice::where('id', $invoice_id)->first();
+        $owner_type = $invoice->owner_type;
+        $owner_id = $invoice->owner_id;
+      
+
+        if ($validator->fails()) {
+            return response()->json(["errors" => $validator->errors()], 422);
+        }
+        
+        $gateway = $request->gateway;
+        $thirPartyResponse = (bool)$request->header('x-client-id');
+        return $this->beginPaymentProcess(
+            $invoice_id, 
+            $gateway, 
+            $owner_type, 
+            $owner_id, 
+            null, 
+            $request->rrr, 
+        );
+    }
+
+
+      public function beginPaymentProcess($invoice_id, $gateway, $owner_type, $owner_id, $wallet = null, $rrr = null)
+    {
+        
+
+        $invoice = Invoice::where('id', $invoice_id)->first();
+        
+        
+        if (!$invoice) {
+            return response()->json(["errors" => "No valid invoice found"], 422);
+        }
+        
+
+        try {
+            $paid =  $invoice->status == 'paid';
+
+            if($paid) {
+                throw new \Exception('Payment has already been completed on this invoice', 422);
+            }
+    
+            DB::beginTransaction();
+            
+            $internalReference = Paystack::genTranxRef();
+            $gatewayService = $this->gatewayFactory->create($gateway);
+            $paymentData  = $gatewayService->preparePaymentData(
+                $gateway, $invoice->amount, $owner_type, $owner_id, null, $invoice, $internalReference, null, $rrr
+            );
+           
+            $payment = Payment::create($paymentData);
+            $response = $this->handleGatewayPaymentRecord(
+                        $gateway, 
+                        $invoice, 
+                        $payment, 
+                        $paymentData, 
+                        $invoice->amount,
+                        $wallet, 
+                        null
+                    );
+            DB::commit();
+
+            return response()->json($response, 200);
+        } catch (\Exception $e) {
+            Log::error($e);
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 400);
+        } catch(\Throwable  $e){
+            Log::error($e);
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 400);
+        } catch(\TypeError  $e){    
+            Log::error($e);    
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+
+    public function handleWebhook(Request $request)
+    {
+        $gateway = $request->gateway;
+        
+        try {
+            $gatewayService = $this->gatewayFactory->create($gateway);
+            return $gatewayService->handleWebhook($request);
+        } catch (\Exception $e) {
+            Log::error("Webhook handling error: " . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+    
+
+    public function handleGatewayCallback(Request $request)
+    {
+        try {
+            $gateway = $request->gateway;
+            $reference = $request->reference;
+            
+            $gatewayService = $this->gatewayFactory->create($gateway);
+            $gatewayService->handleCallback($reference);
+            return view('close');
+        } catch (\Exception $e) {
+            return response()->json(["error" => $e->getMessage()], 400);
+        }
+    }
+
+
+    public function verifyPayment($reference){
+        $payment = Payment::where('reference', $reference)->orWhere('gateway_reference', $reference)->first();
+        if(!$payment){
+            return response()->json(['message' => 'Payment not found'], 404);
+        }
+        $payment = $payment;
+        return response()->json($payment);
+    }
+
+    private function handleGatewayPaymentRecord($gateway, $invoice, $payment, $paymentData, $totalAmount, $wallet, $description = 'payment')
+    {
+        
+        try {
+            $gatewayService = $this->gatewayFactory->create($gateway);
+            $response = $gatewayService->processPayment($invoice, $payment, $paymentData, $totalAmount, $wallet, $description);
+            Log::info("Gateway processing response: " . json_encode($response));
+            return $response;
+        } catch (\Exception $e) {
+            Log::error("Gateway processing error: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
 }
