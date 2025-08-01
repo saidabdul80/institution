@@ -10,6 +10,7 @@ use Modules\Staff\Http\Controllers\ProgrammeController;
 use Modules\Staff\Http\Controllers\DashboardController;
 use Modules\Staff\Http\Controllers\AdmissionController;
 use Modules\Staff\Http\Controllers\ApplicantImportController;
+use Modules\Staff\Http\Controllers\PermissionController;
 use Modules\Staff\Http\Controllers\ResultController;
 use Modules\Staff\Http\Controllers\StaffCourseController;
 use Modules\Staff\Http\Controllers\TranscriptController;
@@ -245,6 +246,17 @@ Route::prefix('staff')->group(function() {
             Route::post('/process', [ApplicantImportController::class, 'processImport'])->middleware('permission:can_import_applicants');
             Route::get('/history', [ApplicantImportController::class, 'getImportHistory'])->middleware('permission:can_view_applicant');
             Route::get('/template', [ApplicantImportController::class, 'downloadTemplate']);
+        });
+
+        // Permission Management Routes
+        Route::group(["prefix"=>"permissions"], function () {
+            Route::get('/list', [PermissionController::class, 'getPermissions'])->middleware('permission:can_manage_permissions');
+            Route::get('/roles', [PermissionController::class, 'getRoles'])->middleware('permission:can_manage_roles');
+            Route::post('/update', [PermissionController::class, 'updatePermissions'])->middleware('permission:can_manage_permissions');
+            Route::post('/assign-role', [PermissionController::class, 'assignRole'])->middleware('permission:can_manage_roles');
+            Route::post('/remove-role', [PermissionController::class, 'removeRole'])->middleware('permission:can_manage_roles');
+            Route::get('/users', [PermissionController::class, 'getUsersWithRoles'])->middleware('permission:can_manage_roles');
+            Route::post('/check', [PermissionController::class, 'checkPermission'])->middleware('permission:can_manage_permissions');
         });
 
         Route::group(["prefix"=>"student"], function () {
