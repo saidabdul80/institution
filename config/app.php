@@ -196,6 +196,13 @@ return [
         App\Providers\RouteServiceProvider::class,
         App\Providers\TenancyServiceProvider::class, // <-- here
 
+        /*
+         * Module Service Providers...
+         */
+        Modules\Application\Providers\ApplicationServiceProvider::class,
+        Modules\Staff\Providers\StaffServiceProvider::class,
+        Modules\Student\Providers\StudentServiceProvider::class,
+        Modules\Result\Providers\ResultServiceProvider::class,
 
     ],
 

@@ -13,10 +13,10 @@ class CreateGradeSettingsTable extends Migration
      */
     public function up()
     {
-        if (!Schema::hasTable('grade_settings')) {
+        if (!Schema::hasTable('grade_settings'))
+        {
             Schema::create('grade_settings', function (Blueprint $table) {
                 $table->id();
-                $table->unsignedBigInteger('programme_id')->nullable();
                 $table->float('min_score');
                 $table->float('max_score');
                 $table->char('grade');

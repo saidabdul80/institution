@@ -1,15 +1,15 @@
 <?php
 
-namespace Modules\Staff\Services;
+namespace Modules\Result\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Modules\Staff\Entities\Result;
-use Modules\Staff\Entities\StudentSemesterGpa;
+use Modules\Result\Entities\Result;
+use Modules\Result\Entities\StudentSemesterGpa;
 use Modules\Staff\Entities\StudentCourseRegistration;
-use Modules\Staff\Entities\GradeSetting;
-use Modules\Staff\Entities\Course;
-use Modules\Staff\Entities\ResultCompilationLog;
+use Modules\Staff\Entities\Session;
+use Modules\Result\Entities\GradeSetting;
+use Modules\Result\Entities\ResultCompilationLog;
 use Modules\Student\Entities\Student;
 use Carbon\Carbon;
 
@@ -21,7 +21,7 @@ class ResultComputationService
     public function compileResults($sessionId, $semester, $levelId, $programmeId = null, $departmentId = null, $compiledBy = null)
     {
         $startTime = now();
-        
+
         // Create compilation log
         $compilationLog = ResultCompilationLog::create([
             'session_id' => $sessionId,
@@ -52,31 +52,31 @@ class ResultComputationService
                 ->where('level_id', $levelId);
 
             if ($programmeId) {
-                $studentsQuery->whereHas('student', function($q) use ($programmeId) {
+                $studentsQuery->whereHas('student', function ($q) use ($programmeId) {
                     $q->where('programme_id', $programmeId);
                 });
             }
 
             if ($departmentId) {
-                $studentsQuery->whereHas('student', function($q) use ($departmentId) {
+                $studentsQuery->whereHas('student', function ($q) use ($departmentId) {
                     $q->where('department_id', $departmentId);
                 });
             }
 
             $registrations = $studentsQuery->get();
-            
+
             // Group by student
             $studentRegistrations = $registrations->groupBy('student_id');
-            
+
             $studentsProcessed = 0;
             $resultsProcessed = 0;
 
             foreach ($studentRegistrations as $studentId => $studentCourses) {
                 $student = $studentCourses->first()->student;
-                
+
                 // Calculate GPA for this student
                 $gpaData = $this->calculateStudentGPA($studentId, $sessionId, $semester, $levelId, $studentCourses);
-                
+
                 if ($gpaData) {
                     // Update or create semester GPA record
                     StudentSemesterGpa::updateOrCreate(
@@ -93,7 +93,7 @@ class ResultComputationService
                             'compiled_by' => $compiledBy
                         ])
                     );
-                    
+
                     $studentsProcessed++;
                     $resultsProcessed += $studentCourses->count();
                 }
@@ -118,10 +118,9 @@ class ResultComputationService
                 'results_processed' => $resultsProcessed,
                 'compilation_log_id' => $compilationLog->id
             ];
-
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             // Update compilation log with error
             $compilationLog->update([
                 'status' => 'failed',
@@ -155,29 +154,30 @@ class ResultComputationService
         $totalCreditPoints = 0;
         $earnedCreditUnits = 0;
         $carryOverCourses = [];
-        
-        // Get grade settings
-        $gradeSettings = GradeSetting::orderBy('min_score', 'desc')->get();
-        
+
+        // Get student's programme ID for programme-specific grade settings
+        $student = Student::find($studentId);
+        $programmeId = $student ? $student->programme_id : null;
+
         foreach ($studentCourses as $registration) {
             $course = $registration->course;
             $creditUnit = $course->credit_unit;
             $totalCreditUnits += $creditUnit;
-            
+
             // Get result for this course
             $result = Result::where('student_id', $studentId)
                 ->where('course_id', $course->id)
                 ->where('session_id', $sessionId)
                 ->where('semester', $semester)
                 ->first();
-            
+
             if ($result && $result->total_score !== null) {
-                // Calculate grade and grade point
-                $gradeData = $this->calculateGrade($result->total_score, $gradeSettings);
+                // Calculate grade and grade point using programme-specific settings
+                $gradeData = GradeSetting::calculateGrade($result->total_score, $programmeId);
                 $gradePoint = $gradeData['grade_point'];
                 $grade = $gradeData['grade'];
                 $status = $gradeData['status'];
-                
+
                 // Update result with calculated values
                 $result->update([
                     'grade' => $grade,
@@ -185,9 +185,9 @@ class ResultComputationService
                     'credit_unit' => $creditUnit,
                     'quality_point' => $gradePoint * $creditUnit
                 ]);
-                
+
                 $totalCreditPoints += ($gradePoint * $creditUnit);
-                
+
                 if ($status === 'pass') {
                     $earnedCreditUnits += $creditUnit;
                 } else {
@@ -198,28 +198,28 @@ class ResultComputationService
                 $carryOverCourses[] = $course->course_code;
             }
         }
-        
+
         // Calculate GPA
         $gpa = $totalCreditUnits > 0 ? round($totalCreditPoints / $totalCreditUnits, 2) : 0.00;
-        
+
         // Get previous semester data for CGPA calculation
         $previousGpaRecord = StudentSemesterGpa::where('student_id', $studentId)
             ->where('session_id', '<', $sessionId)
-            ->orWhere(function($q) use ($sessionId, $semester) {
+            ->orWhere(function ($q) use ($sessionId, $semester) {
                 $q->where('session_id', $sessionId)
-                  ->where('semester', '<', $semester);
+                    ->where('semester', '<', $semester);
             })
             ->orderBy('session_id', 'desc')
             ->orderBy('semester', 'desc')
             ->first();
-        
+
         // Calculate cumulative values
         $totalRegisteredCreditUnits = $totalCreditUnits;
         $totalEarnedCreditUnits = $earnedCreditUnits;
         $totalCumulativePoints = $totalCreditPoints;
         $numberOfSemesters = 1;
         $previousCgpa = 0.00;
-        
+
         if ($previousGpaRecord) {
             $totalRegisteredCreditUnits += $previousGpaRecord->total_registered_credit_units;
             $totalEarnedCreditUnits += $previousGpaRecord->total_earned_credit_units;
@@ -227,13 +227,13 @@ class ResultComputationService
             $numberOfSemesters = $previousGpaRecord->number_of_semesters + 1;
             $previousCgpa = $previousGpaRecord->cgpa;
         }
-        
+
         // Calculate CGPA
         $cgpa = $totalRegisteredCreditUnits > 0 ? round($totalCumulativePoints / $totalRegisteredCreditUnits, 2) : 0.00;
-        
+
         // Determine academic status
         $academicStatus = $this->determineAcademicStatus($cgpa, $numberOfSemesters);
-        
+
         return [
             'registered_credit_units' => $totalCreditUnits,
             'earned_credit_units' => $earnedCreditUnits,
@@ -251,28 +251,7 @@ class ResultComputationService
         ];
     }
 
-    /**
-     * Calculate grade based on score
-     */
-    private function calculateGrade($score, $gradeSettings)
-    {
-        foreach ($gradeSettings as $setting) {
-            if ($score >= $setting->min_score && $score <= $setting->max_score) {
-                return [
-                    'grade' => $setting->grade,
-                    'grade_point' => $setting->grade_point,
-                    'status' => $setting->status
-                ];
-            }
-        }
-        
-        // Default to F if no grade found
-        return [
-            'grade' => 'F',
-            'grade_point' => 0.00,
-            'status' => 'fail'
-        ];
-    }
+
 
     /**
      * Determine academic status based on CGPA
@@ -296,7 +275,7 @@ class ResultComputationService
     {
         $session = \Modules\Staff\Entities\Session::find($sessionId);
         $sessionName = str_replace('/', '-', $session->name);
-        
+
         return "{$sessionName}-{$semester}-{$courseCode}";
     }
 }

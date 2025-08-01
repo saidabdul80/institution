@@ -1,15 +1,15 @@
 <?php
 
-namespace Modules\Staff\Repositories;
+namespace Modules\Result\Repositories;
 
 use Exception;
 use Illuminate\Support\Facades\DB;
-use App\Models\Student;
-use App\Models\Course;
-use App\Models\StudentCourseGrade;
-use App\Models\Session;
-use App\Models\Level;
-use App\Models\Programme;
+use Modules\Student\Entities\Student;
+use Modules\Staff\Entities\Course;
+use Modules\Result\Entities\StudentCourseGrade;
+use Modules\Staff\Entities\Session;
+use Modules\Staff\Entities\Level;
+use Modules\Staff\Entities\Programme;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ResultRepository
@@ -57,7 +57,7 @@ class ResultRepository
             if ($grade->course) {
                 $creditUnits = $grade->course->credit_unit ?? 0;
                 $gradePoint = $grade->grade_point ?? 0;
-                
+
                 $totalGradePoints += ($gradePoint * $creditUnits);
                 $totalCreditUnits += $creditUnits;
             }
@@ -234,7 +234,6 @@ class ResultRepository
                     ]);
 
                     $successCount++;
-
                 } catch (Exception $e) {
                     $errors[] = "Row " . ($index + 2) . ": " . $e->getMessage();
                     $errorCount++;
@@ -247,7 +246,6 @@ class ResultRepository
                 'error_count' => $errorCount,
                 'errors' => $errors
             ];
-
         } catch (Exception $e) {
             throw new Exception('Failed to process file: ' . $e->getMessage());
         }

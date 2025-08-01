@@ -1,13 +1,10 @@
 <?php
 
-namespace Modules\Staff\Services;
+namespace Modules\Result\Services;
 
 use Exception;
 use Illuminate\Support\Facades\DB;
-use App\Models\Student;
-use App\Models\Course;
-use App\Models\StudentCourseGrade;
-use Modules\Staff\Repositories\ResultRepository;
+use Modules\Result\Repositories\ResultRepository;
 
 class ResultService
 {
@@ -99,7 +96,6 @@ class ResultService
 
             DB::commit();
             return 'Results saved successfully';
-
         } catch (Exception $e) {
             DB::rollback();
             throw new Exception('Failed to save results: ' . $e->getMessage());

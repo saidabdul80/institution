@@ -1,23 +1,22 @@
 <?php
 
-namespace Modules\Staff\Http\Controllers;
+namespace Modules\Result\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use Illuminate\Validation\ValidationException;
 use Exception;
 use App\Http\Resources\APIResource;
-use Modules\Staff\Services\ResultService;
-use Modules\Staff\Services\ResultComputationService;
-use Modules\Staff\Entities\StudentSemesterGpa;
-use Modules\Staff\Entities\StaffCourseAllocation;
-use Modules\Staff\Entities\ResultCompilationLog;
+use Modules\Result\Services\ResultService;
+use Modules\Result\Services\ResultComputationService;
+use Modules\Result\Entities\StudentSemesterGpa;
+use Modules\Result\Entities\ResultCompilationLog;
+use Modules\Result\Entities\GradeSetting;
 
 class ResultController extends Controller
 {
-    protected $resultService;
-    protected $resultComputationService;
+    private $resultService;
+    private $resultComputationService;
 
     public function __construct(ResultService $resultService, ResultComputationService $resultComputationService)
     {
@@ -25,9 +24,6 @@ class ResultController extends Controller
         $this->resultComputationService = $resultComputationService;
     }
 
-    /**
-     * Compute results for students
-     */
     public function computeResults(Request $request)
     {
         try {
@@ -40,7 +36,6 @@ class ResultController extends Controller
 
             $response = $this->resultService->computeResults($request);
             return new APIResource($response, false, 200);
-
         } catch (ValidationException $e) {
             return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
@@ -48,9 +43,6 @@ class ResultController extends Controller
         }
     }
 
-    /**
-     * Compute individual student result
-     */
     public function computeIndividualResult(Request $request)
     {
         try {
@@ -62,7 +54,6 @@ class ResultController extends Controller
 
             $response = $this->resultService->computeIndividualResult($request);
             return new APIResource($response, false, 200);
-
         } catch (ValidationException $e) {
             return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
@@ -70,9 +61,6 @@ class ResultController extends Controller
         }
     }
 
-    /**
-     * Get students for result computation
-     */
     public function getStudentsForComputation(Request $request)
     {
         try {
@@ -85,7 +73,6 @@ class ResultController extends Controller
 
             $response = $this->resultService->getStudentsForComputation($request);
             return new APIResource($response, false, 200);
-
         } catch (ValidationException $e) {
             return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
@@ -93,9 +80,6 @@ class ResultController extends Controller
         }
     }
 
-    /**
-     * Get students with existing results/scores
-     */
     public function getStudentsWithResults(Request $request)
     {
         try {
@@ -109,7 +93,6 @@ class ResultController extends Controller
 
             $response = $this->resultService->getStudentsWithResults($request);
             return new APIResource($response, false, 200);
-
         } catch (ValidationException $e) {
             return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
@@ -117,9 +100,6 @@ class ResultController extends Controller
         }
     }
 
-    /**
-     * Save batch results
-     */
     public function saveBatchResults(Request $request)
     {
         try {
@@ -138,7 +118,6 @@ class ResultController extends Controller
 
             $response = $this->resultService->saveBatchResults($request);
             return new APIResource($response, false, 200);
-
         } catch (ValidationException $e) {
             return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
@@ -146,9 +125,6 @@ class ResultController extends Controller
         }
     }
 
-    /**
-     * Bulk upload results from file
-     */
     public function bulkUploadResults(Request $request)
     {
         try {
@@ -163,7 +139,6 @@ class ResultController extends Controller
 
             $response = $this->resultService->bulkUploadResults($request);
             return new APIResource($response, false, 200);
-
         } catch (ValidationException $e) {
             return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
@@ -171,9 +146,6 @@ class ResultController extends Controller
         }
     }
 
-    /**
-     * Compile results using advanced GPA calculation
-     */
     public function compileAdvancedResults(Request $request)
     {
         try {
@@ -195,11 +167,10 @@ class ResultController extends Controller
             );
 
             return new APIResource($result, !$result['success'], $result['success'] ? 200 : 400);
-
         } catch (ValidationException $e) {
             return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
-            return new APIResource($e->getMessage(), true, 500);
+            return new APIResource($e->getMessage(), true, 400);
         }
     }
 
@@ -240,101 +211,10 @@ class ResultController extends Controller
             }
 
             $gpaRecords = $query->orderBy('session_id', 'desc')
-                               ->orderBy('semester', 'desc')
-                               ->paginate(50);
+                ->orderBy('semester', 'desc')
+                ->paginate(50);
 
             return new APIResource($gpaRecords, false, 200);
-
-        } catch (ValidationException $e) {
-            return new APIResource(array_values($e->errors())[0], true, 400);
-        } catch (Exception $e) {
-            return new APIResource($e->getMessage(), true, 500);
-        }
-    }
-
-    /**
-     * Get staff course allocations
-     */
-    public function getStaffCourseAllocations(Request $request)
-    {
-        try {
-            $request->validate([
-                'staff_id' => 'nullable|exists:staff,id',
-                'session_id' => 'nullable|exists:sessions,id',
-                'semester' => 'nullable|integer|min:1|max:3',
-                'course_id' => 'nullable|exists:courses,id',
-                'allocation_type' => 'nullable|in:lecturer,coordinator,examiner'
-            ]);
-
-            $query = StaffCourseAllocation::with(['staff', 'course', 'session', 'programme', 'level', 'allocatedBy']);
-
-            if ($request->staff_id) {
-                $query->where('staff_id', $request->staff_id);
-            }
-
-            if ($request->session_id) {
-                $query->where('session_id', $request->session_id);
-            }
-
-            if ($request->semester) {
-                $query->where('semester', $request->semester);
-            }
-
-            if ($request->course_id) {
-                $query->where('course_id', $request->course_id);
-            }
-
-            if ($request->allocation_type) {
-                $query->where('allocation_type', $request->allocation_type);
-            }
-
-            $allocations = $query->active()
-                                ->orderBy('created_at', 'desc')
-                                ->paginate(50);
-
-            return new APIResource($allocations, false, 200);
-
-        } catch (ValidationException $e) {
-            return new APIResource(array_values($e->errors())[0], true, 400);
-        } catch (Exception $e) {
-            return new APIResource($e->getMessage(), true, 500);
-        }
-    }
-
-    /**
-     * Create staff course allocation
-     */
-    public function createStaffCourseAllocation(Request $request)
-    {
-        try {
-            $request->validate([
-                'staff_id' => 'required|exists:staff,id',
-                'course_id' => 'required|exists:courses,id',
-                'session_id' => 'required|exists:sessions,id',
-                'semester' => 'required|integer|min:1|max:3',
-                'programme_id' => 'required|exists:programmes,id',
-                'level_id' => 'required|exists:levels,id',
-                'allocation_type' => 'required|in:lecturer,coordinator,examiner',
-                'remarks' => 'nullable|string|max:500'
-            ]);
-
-            $allocation = StaffCourseAllocation::create([
-                'staff_id' => $request->staff_id,
-                'course_id' => $request->course_id,
-                'session_id' => $request->session_id,
-                'semester' => $request->semester,
-                'programme_id' => $request->programme_id,
-                'level_id' => $request->level_id,
-                'allocation_type' => $request->allocation_type,
-                'remarks' => $request->remarks,
-                'allocated_by' => auth()->id(),
-                'allocated_at' => now()
-            ]);
-
-            $allocation->load(['staff', 'course', 'session', 'programme', 'level']);
-
-            return new APIResource($allocation, false, 201);
-
         } catch (ValidationException $e) {
             return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
@@ -369,60 +249,89 @@ class ResultController extends Controller
             $logs = $query->orderBy('created_at', 'desc')->paginate(20);
 
             return new APIResource($logs, false, 200);
-
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 500);
         }
     }
 
     /**
-     * Update staff course allocation
+     * Get grade settings for a programme (with fallback to general)
      */
-    public function updateStaffCourseAllocation(Request $request, $id)
+    public function getGradeSettings(Request $request)
     {
         try {
-            $allocation = StaffCourseAllocation::findOrFail($id);
+            $programmeId = $request->get('programme_id');
 
+            $gradeSettings = GradeSetting::getGradeScaleForProgramme($programmeId);
+
+            return new APIResource([
+                'grade_settings' => $gradeSettings,
+                'is_programme_specific' => $programmeId && $gradeSettings->first()?->isProgrammeSpecific(),
+                'programme_id' => $programmeId
+            ], false, 200);
+        } catch (Exception $e) {
+            return new APIResource($e->getMessage(), true, 500);
+        }
+    }
+
+    /**
+     * Get general grade settings only
+     */
+    public function getGeneralGradeSettings()
+    {
+        try {
+            $gradeSettings = GradeSetting::getGeneralGradeScale();
+
+            return new APIResource($gradeSettings, false, 200);
+        } catch (Exception $e) {
+            return new APIResource($e->getMessage(), true, 500);
+        }
+    }
+
+    /**
+     * Create or update grade setting
+     */
+    public function saveGradeSetting(Request $request)
+    {
+        try {
             $request->validate([
-                'staff_id' => 'sometimes|exists:staff,id',
-                'course_id' => 'sometimes|exists:courses,id',
-                'session_id' => 'sometimes|exists:sessions,id',
-                'semester' => 'sometimes|integer|min:1|max:3',
-                'programme_id' => 'sometimes|exists:programmes,id',
-                'level_id' => 'sometimes|exists:levels,id',
-                'allocation_type' => 'sometimes|in:lecturer,coordinator,examiner',
-                'remarks' => 'nullable|string|max:500',
-                'is_active' => 'sometimes|boolean'
+                'programme_id' => 'nullable|exists:programmes,id',
+                'min_score' => 'required|numeric|min:0|max:100',
+                'max_score' => 'required|numeric|min:0|max:100|gte:min_score',
+                'grade' => 'required|string|max:2',
+                'grade_point' => 'required|numeric|min:0|max:5',
+                'status' => 'required|in:pass,fail',
+                'description' => 'nullable|string|max:255'
             ]);
 
-            $allocation->update($request->only([
-                'staff_id', 'course_id', 'session_id', 'semester',
-                'programme_id', 'level_id', 'allocation_type',
-                'remarks', 'is_active'
-            ]));
+            $gradeSettingData = $request->only([
+                'programme_id',
+                'min_score',
+                'max_score',
+                'grade',
+                'grade_point',
+                'status',
+                'description'
+            ]);
+            $gradeSettingData['created_by'] = auth('api-staff')->id();
 
-            $allocation->load(['staff', 'course', 'session', 'programme', 'level']);
+            if ($request->has('id') && $request->id) {
+                // Update existing
+                $gradeSetting = GradeSetting::findOrFail($request->id);
+                $gradeSetting->update($gradeSettingData);
+                $message = 'Grade setting updated successfully';
+            } else {
+                // Create new
+                $gradeSetting = GradeSetting::create($gradeSettingData);
+                $message = 'Grade setting created successfully';
+            }
 
-            return new APIResource($allocation, false, 200);
-
+            return new APIResource([
+                'grade_setting' => $gradeSetting,
+                'message' => $message
+            ], false, 200);
         } catch (ValidationException $e) {
             return new APIResource(array_values($e->errors())[0], true, 400);
-        } catch (Exception $e) {
-            return new APIResource($e->getMessage(), true, 500);
-        }
-    }
-
-    /**
-     * Delete staff course allocation
-     */
-    public function deleteStaffCourseAllocation($id)
-    {
-        try {
-            $allocation = StaffCourseAllocation::findOrFail($id);
-            $allocation->delete();
-
-            return new APIResource('Allocation deleted successfully', false, 200);
-
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 500);
         }
