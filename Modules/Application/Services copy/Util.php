@@ -831,33 +831,7 @@ class Util
     }
 
     static public function invoiceInitiated($invoice){
-        $link = config('default.portal.domain') . '/' . 'verify/' . $invoice->invoice_number;
-        $taxable = $invoice->taxable;
-        $phone_number = $taxable?->phone_number?? $taxable->phone_number_1;
-        if (!empty($phone_number)) {
-            SendSMS::dispatch(
-                validate_phone_number($phone_number),  
-                "Dear " . $taxable->full_name . "\n" .
-                "A payment of {$invoice->amount} has been initiated on your account with invoice number ({$invoice->invoice_number}).\n. Kindly use the link below to proceed with payment\n" .
-                $link
-            );
-        }
-        
-        $invoiceMailData = $taxable->toArray();
-        $invoiceMailData['email'] = $invoiceMailData['email'] ?? config('default.email');
-        $invoiceMailData['link'] = $link;
-        $invoiceMailData['message'] = "
-                <p>
-                    A payment of {$invoice->amount} has been initiated on your account with invoice number ({$invoice->invoice_number}).
-                </p>
-                <p>
-                    Kindly use the link below to proceed with payment:
-                </p>
-                <a href='$link'>Click to Continue</a>
-            ";
-
-        QueueMail::dispatch($invoiceMailData, 'invoice_initiated', "GIRS Invoice Created");
-
+     
     }
    
     private static function lastSubaccountShare($subaccounts){

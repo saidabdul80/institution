@@ -17,7 +17,7 @@ class InvoiceTypeTableSeeder extends Seeder
     public function run()
     {
         Model::unguard();
-        $id = PaymentCategory::PaymentId("accommodation_fee");
+        $id = PaymentCategory::paymentId("accommodation_fee");
         InvoiceType::create([
             "name" => "Accommodation Fee",
             "amount" => 13000,
@@ -26,7 +26,7 @@ class InvoiceTypeTableSeeder extends Seeder
 
         ]);
 
-        $id = PaymentCategory::PaymentId("application_fee");        
+        $id = PaymentCategory::paymentId("application_fee");        
         InvoiceType::create([
             "name" => "Application Fee",
             "amount" => 2000,
@@ -35,7 +35,7 @@ class InvoiceTypeTableSeeder extends Seeder
 
         ]);
 
-        $id = PaymentCategory::PaymentId("acceptance_fee");
+        $id = PaymentCategory::paymentId("acceptance_fee");
         InvoiceType::create([
             "name" => "Acceptance Fee",
             "amount" => 10000,
@@ -44,7 +44,7 @@ class InvoiceTypeTableSeeder extends Seeder
 
         ]);
 
-        $id = PaymentCategory::PaymentId("registration_fee");
+        $id = PaymentCategory::paymentId("registration_fee");
         InvoiceType::create([
             "name" => "School Fees",
             "amount" => 50000,
