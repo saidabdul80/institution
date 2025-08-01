@@ -29,7 +29,7 @@ Route::prefix('applicants')->group(function() {
     })->name('login');
     Route::post('/create', [ApplicantsController::class, 'create']);
 
-    Route::group(["middleware" => ['auth:api-applicants']], function () {
+    Route::group(["middleware" => ['auth:api-applicants', 'check.application.fee']], function () {
         Route::get('/registration_progress/{applicant_id}', [ApplicantsController::class, 'registrationProgress']);
         Route::get('/self', [ApplicantsController::class, 'getApplicantById']);
         Route::get('/alevel/{id}', [ApplicantsController::class, 'aLevelResult']);

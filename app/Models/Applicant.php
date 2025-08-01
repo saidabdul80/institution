@@ -20,6 +20,14 @@ class Applicant extends Authenticatable
 
     protected $fillable = ['*'];
     protected $hidden =['password'];
+
+    protected $casts = [
+        'jamb_subject_scores' => 'array',
+        'is_imported' => 'boolean',
+        'application_fee_paid' => 'boolean',
+        'imported_at' => 'datetime',
+        'application_fee_paid_at' => 'datetime',
+    ];
     /*  protected static function newFactory()
     {
 

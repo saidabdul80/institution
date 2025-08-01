@@ -72,6 +72,7 @@ class Kernel extends HttpKernel
         'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
         'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
         'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+        'check.application.fee' => \App\Http\Middleware\CheckApplicationFeePayment::class,
     ];
 
     protected $middlewareAliases = [        

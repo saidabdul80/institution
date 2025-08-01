@@ -141,11 +141,19 @@ class ApplicantsController extends Controller
             $applicant->logged_in_time = now();
             $applicant->logged_in_count = $applicant->logged_in_count??0 + 1;
             $applicant->save();
+
             //generate access token for logged in user
-            //$accessToken = $applicant->login();
             $accessToken = $applicant->createToken("AuthToken")->accessToken;
+
+            // Check if application fee is paid for imported applicants
+            $requiresPayment = $applicant->is_imported && !$applicant->application_fee_paid;
+
             //response structure
-            return new APIResource(["applicant" => $applicant,"accessToken" => $accessToken ], false, 200);
+            return new APIResource([
+                "applicant" => $applicant,
+                "accessToken" => $accessToken,
+                "requires_payment" => $requiresPayment
+            ], false, 200);
 
         } catch (ValidationException $e) {
 

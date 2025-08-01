@@ -11,6 +11,7 @@ use App\Services\Utilities;
 use Psy\Exception\ThrowUpException;
 use App\Repositories\InvoiceTypeRepository as CentralInvoiceTypeRepository;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Applicant;
 
 class ApplicantsService{
 
@@ -148,8 +149,18 @@ class ApplicantsService{
 
     public function attempt($request)
     {
+        // Support both email and JAMB number login
+        $username = $request->username;
 
-        return $this->applicantRepository->checkApplicantCredentials($request->username);
+        // First try to find by email
+        $applicant = $this->applicantRepository->checkApplicantCredentials($username);
+
+        // If not found by email, try JAMB number
+        if (!$applicant) {
+            $applicant = Applicant::where('jamb_number', $username)->first();
+        }
+
+        return $applicant;
     }
 
 

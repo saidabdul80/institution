@@ -9,6 +9,7 @@ use Modules\Staff\Http\Controllers\CourseController;
 use Modules\Staff\Http\Controllers\ProgrammeController;
 use Modules\Staff\Http\Controllers\DashboardController;
 use Modules\Staff\Http\Controllers\AdmissionController;
+use Modules\Staff\Http\Controllers\ApplicantImportController;
 use Modules\Staff\Http\Controllers\ResultController;
 use Modules\Staff\Http\Controllers\StaffCourseController;
 use Modules\Staff\Http\Controllers\TranscriptController;
@@ -236,6 +237,14 @@ Route::prefix('staff')->group(function() {
             Route::post('/update_status', [ApplicantController::class, 'updateApplicantStatus'])->middleware('permission:can_give_admission');
             Route::post('/bulk_update_status', [ApplicantController::class, 'bulkUpdateApplicantStatus'])->middleware('permission:can_give_admission');
             Route::post('/process', [ApplicantController::class, 'processApplication'])->middleware('permission:can_set_applicant_qualification_status');
+        });
+
+        // Applicant Import Routes
+        Route::group(["prefix"=>"applicant-import"], function () {
+            Route::post('/upload', [ApplicantImportController::class, 'uploadFile'])->middleware('permission:can_import_applicants');
+            Route::post('/process', [ApplicantImportController::class, 'processImport'])->middleware('permission:can_import_applicants');
+            Route::get('/history', [ApplicantImportController::class, 'getImportHistory'])->middleware('permission:can_view_applicant');
+            Route::get('/template', [ApplicantImportController::class, 'downloadTemplate']);
         });
 
         Route::group(["prefix"=>"student"], function () {
