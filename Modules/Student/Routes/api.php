@@ -7,6 +7,7 @@ use Modules\Staff\Http\Controllers\InvoiceTypeController;
 use Illuminate\Support\Facades\Route;
 use Modules\ApplicationPortalAPI\Http\Controllers\PaymentController as ControllersPaymentController; //from app
 use App\Http\Controllers\PaymentController as CentralPaymentController;
+use App\Http\Controllers\PDFController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -54,6 +55,10 @@ Route::prefix('studentportal')->group(function() {
             Route::post('/initiate_payment', [CentralPaymentController::class, 'initiatePayment']);
             Route::get('/wallet', [StudentController::class, 'getWallet']);
             Route::post('/pay', [CentralPaymentController::class, 'pay'])->middleware('idempotency');
+
+            // PDF Generation Routes
+            Route::post('/receipt-pdf', [PDFController::class, 'downloadPaymentReceipt']);
+            Route::post('/invoice-pdf', [PDFController::class, 'downloadInvoice']);
         });
     });
 });

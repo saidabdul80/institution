@@ -36,7 +36,8 @@ class PDFController extends Controller
     public function downloadInvoice(Request $request)
     {
         $xtenant = $request->header('xtenant');
-        $invoice = $this->invoiceService->getByInvoiceNumber($request->invoice_id, $request->host);
+        $host = $request->host ?? $request->header('host') ?? $xtenant;
+        $invoice = $this->invoiceService->getByInvoiceNumber($request->invoice_id, $host);
         $school_info = $this->schoolInfo($xtenant);
         $config = DB::table('configurations')->where('name', 'show_photo_on_invoice')->first();
         $dompdf = Pdf::setOption(['isRemoteEnabled' => true]);
@@ -47,7 +48,8 @@ class PDFController extends Controller
     public function downloadPaymentReceipt(Request $request)
     {
         $xtenant = $request->header('xtenant');
-        $payment = $this->invoiceService->getReceipt($request->invoice_id, $xtenant);
+        $host = $request->host ?? $request->header('host') ?? $xtenant;
+        $payment = $this->invoiceService->getReceipt($request->invoice_id, $host);
         $school_info = $this->schoolInfo($xtenant);
         $config = DB::table('configurations')->where('name', 'show_photo_on_receipt')->first();
         $dompdf = Pdf::setOption(['isRemoteEnabled' => true]);

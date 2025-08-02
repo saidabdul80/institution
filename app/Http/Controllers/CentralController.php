@@ -411,7 +411,9 @@ class CentralController extends Controller
 
     public function test()
     {
-        //$students = Student::whereIn('level_id',[3,9])->where(['programme_type_id'=>2,'status'=>'active'])->get();            
+        //$students = Student::whereIn('level_id',[3,9])->where(['programme_type_id'=>2,'status'=>'active'])->get();
 
     }
+
+
 }

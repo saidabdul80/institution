@@ -372,6 +372,34 @@ Route::prefix('staff')->group(function () {
         Route::post('/update_student_info', [StaffController::class, 'updateStudent'])->middleware('permission:"can_update_student_info"');
         Route::post('/update_school_info', [StaffController::class, 'updateSchoolInfo'])->middleware('permission:"can_edit_school_info"');
 
+
+        // Payment Management Routes
+        Route::post('/payments/all', [CentralPaymentController::class, 'getAllPayments']);
+        Route::post('/payments/statistics', [CentralPaymentController::class, 'getPaymentStatistics']);
+        Route::post('/payments/export', [CentralPaymentController::class, 'exportPayments']);
+        Route::post('/payments/requery/{payment_reference}', [CentralPaymentController::class, 'requery']);
+
+        // Invoice Management Routes
+        Route::post('/invoices/all', [CentralInvoiceController::class, 'getAllInvoices']);
+        Route::post('/invoices/statistics', [CentralInvoiceController::class, 'getInvoiceStatistics']);
+        Route::post('/invoices/create', [CentralInvoiceController::class, 'createInvoice']);
+        Route::post('/invoices/export', [CentralInvoiceController::class, 'exportInvoices']);
+        Route::post('/invoices/send_payment_link', [CentralInvoiceController::class, 'sendPaymentLink']);
+        Route::post('/invoice_types/all', [InvoiceTypeController::class, 'getInvoiceTypes']);
+        Route::get('/sessions/all', [CentralController::class, 'getSessions']);
+
+        // Payment Reports & Analytics Routes
+        Route::post('/payment_categories/all', [CentralPaymentController::class, 'getPaymentCategories']);
+        Route::post('/reports/payments', [CentralPaymentController::class, 'generatePaymentReport']);
+        Route::post('/reports/payments/export', [CentralPaymentController::class, 'exportPaymentReport']);
+        Route::post('/analytics/revenue', [CentralPaymentController::class, 'getRevenueAnalytics']);
+        Route::post('/pdf/exam-card', [PDFController::class, 'examCard']);
+        Route::post('/pdf/course-form', [PDFController::class, 'courseForm']);
+        Route::post('/pdf/result-slip', [PDFController::class, 'resultSlip']);
+        Route::post('/pdf/olevel-slip', [PDFController::class, 'olevelSlip']);
+        Route::post('/programme_types/{search?}',  [CentralController::class, 'programmeTypeWithoutPaginate']);
+        Route::get('/payment/{reference}', [CentralPaymentController::class, 'show']);
+        Route::get('/configuration/{name?}', [CentralController::class, 'getConfiguration']);
         //Route::post('/changing_student_programme', [AdmissionController::class, 'changeStudentProgramme'])->middleware('permission:can_change_student_programme');
     });
 });
@@ -417,13 +445,7 @@ Route::prefix('open')->group(function () {
     Route::post('/biodata-pdf', [PDFController::class, 'biodataSlip']);
     Route::post('/acknowledgement-pdf', [PDFController::class, 'acknowledgementSlip']);
     Route::post('/payments/pay', [CentralPaymentController::class, 'initiatePayment']);
-    Route::post('/pdf/exam-card', [PDFController::class, 'examCard']);
-    Route::post('/pdf/course-form', [PDFController::class, 'courseForm']);
-    Route::post('/pdf/result-slip', [PDFController::class, 'resultSlip']);
-    Route::post('/pdf/olevel-slip', [PDFController::class, 'olevelSlip']);
-    Route::post('/programme_types/{search?}',  [CentralController::class, 'programmeTypeWithoutPaginate']);
-    Route::get('/payment/{reference}', [CentralPaymentController::class, 'show']);
-    Route::get('/configuration/{name?}', [CentralController::class, 'getConfiguration']);
+
 });
 
 

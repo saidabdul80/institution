@@ -11,8 +11,8 @@ class Payment extends Model
 
     protected $with = ['invoice'];
     protected $casts = ['created_at'=>'datetime:Y-m-d'];
-    protected $fillable = ['invoice_id','paid_amount', "amount", "ourTrxRef", "payment_reference", "session_id", "owner_id", "owner_type", "payment_mode"];
-    protected $appends = ['owner'];
+    protected $fillable = ['invoice_id','paid_amount', "amount", "ourTrxRef", "payment_reference", "session_id", "owner_id", "owner_type", "payment_mode",'gateway'];
+    protected $appends = ['owner','reference'];
  
 
     public function getProgrammeIdAttribute()
@@ -85,6 +85,10 @@ class Payment extends Model
 
     public function invoice(){
         return $this->belongsTo(Invoice::class);
+    }
+
+    public function getReferenceAttribute(){
+        return $this->ourTrxRef;
     }
 
 }

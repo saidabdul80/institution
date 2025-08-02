@@ -6,6 +6,7 @@ use Modules\Application\Http\Controllers\ApplicantsController;
 use Modules\Application\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentController as CentralPaymentController;
 use App\Http\Controllers\InvoiceController as CentralInvoiceController;
+use App\Http\Controllers\PDFController;
 use App\Http\Resources\APIResource;
 
 /*
@@ -65,7 +66,11 @@ Route::prefix('applicants')->group(function() {
             Route::post('/distinct_payment_details', [PaymentController::class, 'distinct']);
             Route::post('/all_invoice_types', [PaymentController::class, 'getAllInvoiceTypes']);
             Route::post('/distinct_payment_details', [PaymentController::class, 'distinct']);
-        });    
+        });
+
+        // PDF Generation Routes
+        Route::post('/receipt-pdf', [PDFController::class, 'downloadPaymentReceipt']);
+        Route::post('/invoice-pdf', [PDFController::class, 'downloadInvoice']);
     });
 });
 

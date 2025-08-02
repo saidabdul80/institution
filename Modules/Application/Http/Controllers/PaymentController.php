@@ -2,6 +2,7 @@
 
 namespace Modules\Application\Http\Controllers;
 
+use App\Http\Resources\PaymentResource;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -129,7 +130,7 @@ class PaymentController extends Controller
 
             $response = $this->paymentsService->getApplicantPayments($request);
 
-            return new UtilResource($response, false, 200);
+            return new UtilResource(PaymentResource::collection($response), false, 200);
         } catch (ValidationException $e) {
             return new UtilResource(array_values($e->errors())[0], true, 400);
         } catch (\Exception $e) {
