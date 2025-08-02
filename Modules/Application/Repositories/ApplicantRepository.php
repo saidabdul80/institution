@@ -26,6 +26,7 @@ use Modules\Application\Database\factories\AlevelFactory;
 use App\Models\Faculty;
 use App\Repositories\ConfigurationRepository;
 use App\Services\Utilities;
+use Illuminate\Support\Facades\Storage;
 use PharIo\Manifest\ApplicationName;
 use PhpParser\Node\Expr\Throw_;
 use Throwable;
@@ -336,22 +337,91 @@ use Throwable;
         // throw new Exception("Applicant not found. Probably applicant not in current session",404);
     }
 
-    public function insertOrUpdateDocument($id, $name, $url){
-        return DB::table('documents')->updateOrInsert([
-            "applicant_id"=> $id,           
+    public function insertOrUpdateDocument($id, $name, $url, $document_type){
+        $result = DB::table('documents')->updateOrInsert([
+            "owner_id"=> $id,
+            'owner_type'=> 'applicant',
             "name"=> $name,
         ],[
             "url"=> $url,
+            "uploaded_at" => now(),
+            "status" => "uploaded",
+            "document_type" => $document_type
         ]);
-    }   
 
-    
-    public function getDocuments($request){
-        return DB::table('documents')->where(["owner_id"=> $request->user()?->id,'owner_type'=>"applicant"])->get();
-    }   
+        // Check if all required documents are now uploaded
+        $this->checkAndUpdateDocumentCompletionStatus($id);
 
+        return $result;
+    }
+
+    /**
+     * Check if all required documents are uploaded and update applicant status
+     */
+    public function checkAndUpdateDocumentCompletionStatus($applicantId)
+    {
+        $requiredDocuments = [
+            'passport_photograph',
+            'birth_certificate',
+            'olevel_certificate',
+            'jamb_result',
+            'local_government_certificate'
+        ];
+
+        $uploadedDocuments = DB::table('documents')
+            ->where('owner_id', $applicantId)
+            ->where('owner_type', 'applicant')
+            ->whereIn('name', $requiredDocuments)
+            ->where('status', 'uploaded')
+            ->pluck('name')
+            ->toArray();
+
+        $allRequiredUploaded = count($uploadedDocuments) >= count($requiredDocuments);
+
+        if ($allRequiredUploaded) {
+            // Update applicant's document completion status
+            DB::table('applicants')
+                ->where('id', $applicantId)
+                ->update([
+                    'documents_completed' => true,
+                    'documents_completed_at' => now()
+                ]);
+        }
+
+        return $allRequiredUploaded;
+    }
+
+        
+    public function getDocuments($request)
+    {
+        $documents = DB::table('documents')
+            ->where([
+                'owner_id' => $request->user()?->id,
+                'owner_type' => 'applicant'
+            ])
+            ->get();
+
+        return $documents->map(function ($document) {
+            // If using S3, $document->url is already a full URL
+            $fullUrl = $document->url;
+
+            // If stored as a relative path (e.g., 'documents/file.jpg'), generate full URL
+            if (!str_starts_with($document->url, 'http')) {
+                $fullUrl = asset($document->url);
+            }
+
+            return [
+                'id' => $document->id,
+                'name' => $document->name,
+                'url' => $fullUrl, // Full URL (works for S3, local, etc.)
+                'document_type' => $document->document_type,
+                'created_at' => $document->created_at,
+                'updated_at' => $document->updated_at,
+            ];
+        });
+    }
     public function checkDocument($applicant_id, $name){
-        return DB::table('documents')->where(["applicant_id"=> $applicant_id, "name"=>$name])->first();
+        return DB::table('documents')->where(["owner_id"=> $applicant_id, "owner_type"=>"applicant", "name"=>$name])->first();
     }   
 
 

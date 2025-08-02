@@ -67,7 +67,7 @@ class ApplicantImportController extends Controller
                 $rowNumber = $index + 2; // +2 because we removed header and Excel starts from 1
                 $rowData = array_combine($headers, $row);
 
-                $validation = $this->validateRow($rowData, $rowNumber, $sessionId);
+                $validation = $this->validateRow($rowData, $rowNumber, $sessionId, $batchId);
 
                 if ($validation['valid']) {
                     $validatedData[] = $validation['data'];
@@ -86,7 +86,7 @@ class ApplicantImportController extends Controller
             }
 
             // Store validated data temporarily (you might want to use cache or temporary table)
-            cache()->put("import_data_{$batchId}", $validatedData, now()->addHours(2));
+            cache()->put("import_data_{$batchId}", $validatedData, now()->addHours(1));
 
             return new APIResource([
                 'message' => 'File validated successfully',
@@ -106,7 +106,7 @@ class ApplicantImportController extends Controller
     /**
      * Validate individual row data
      */
-    private function validateRow($rowData, $rowNumber, $sessionId)
+    private function validateRow($rowData, $rowNumber, $sessionId, $batchId = null)
     {
         $errors = [];
         $data = [];
@@ -209,12 +209,13 @@ class ApplicantImportController extends Controller
         }
 
         // Add default values
-        $data['session_id'] =intval($sessionId);
+        $data['session_id'] = intval($sessionId);
         $data['password'] = Hash::make($rowData['jamb_number']); // Default password is JAMB number
-        $data['application_number'] = $this->generateApplicationNumber($sessionId);
+        $data['application_number'] = $this->generateApplicationNumber($sessionId, $batchId);
         $data['is_imported'] = true;
         $data['imported_at'] = now();
         $data['application_fee_paid'] = false;
+        $data['import_batch_id'] = $batchId;
 
         return [
             'valid' => empty($errors),
@@ -254,24 +255,56 @@ class ApplicantImportController extends Controller
     /**
      * Generate application number
      */
-    private function generateApplicationNumber($sessionId)
+    private function generateApplicationNumber($sessionId, $batchId = null)
     {
         $session = DB::table('sessions')->find($sessionId);
         $year = $session ? date('Y', strtotime($session->name)) : date('Y');
+        $prefix = "UTME/{$year}/IMP";
 
-        // Get the last application number for this session
-        $lastApplicant = Applicant::where('session_id', $sessionId)
-            ->orderBy('id', 'desc')
-            ->first();
+        // Use database transaction for atomic increment
+        return DB::transaction(function () use ($sessionId, $prefix) {
+            $tracker = DB::table('application_number_tracker')
+                ->where('session_id', $sessionId)
+                ->where('prefix', $prefix)
+                ->lockForUpdate()
+                ->first();
 
-        $nextNumber = 1;
-        if ($lastApplicant && $lastApplicant->application_number) {
-            // Extract number from application number (assuming format like COE/2024/FT/0001)
-            preg_match('/(\d+)$/', $lastApplicant->application_number, $matches);
-            $nextNumber = isset($matches[1]) ? (int)$matches[1] + 1 : 1;
-        }
+            if ($tracker) {
+                $nextNumber = $tracker->last_number + 1;
+                DB::table('application_number_tracker')
+                    ->where('id', $tracker->id)
+                    ->update(['last_number' => $nextNumber]);
+            } else {
+                $nextNumber = 1;
+                DB::table('application_number_tracker')->insert([
+                    'session_id' => $sessionId,
+                    'prefix' => $prefix,
+                    'last_number' => $nextNumber,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
 
-        return sprintf("UTME/%s/IMP/%04d", $year, $nextNumber);
+            $applicationNumber = sprintf("%s/%04d", $prefix, $nextNumber);
+
+            // Double-check that the generated number doesn't exist
+            $exists = DB::table('applicants')
+                ->where('application_number', $applicationNumber)
+                ->exists();
+
+            if ($exists) {
+                // If it exists, increment the tracker and generate a new one
+                DB::table('application_number_tracker')
+                    ->where('session_id', $sessionId)
+                    ->where('prefix', $prefix)
+                    ->increment('last_number');
+
+                $nextNumber = $nextNumber + 1;
+                $applicationNumber = sprintf("%s/%04d", $prefix, $nextNumber);
+            }
+
+            return $applicationNumber;
+        });
     }
 
     /**
@@ -317,20 +350,31 @@ class ApplicantImportController extends Controller
                         'first_name', 'surname', 'jamb_number', 'session_id',
                         'applied_programme_id', 'programme_id', 'mode_of_entry_id'
                     ];
+                    
                     foreach ($requiredFields as $field) {
                         if (empty($data[$field])) {
                             throw new Exception("Required field '{$field}' is missing or empty");
                         }
                     }
 
-                    // Debug: Log the data being inserted
-                    Log::info('Creating applicant with data', [
-                        'session_id' => $data['session_id'],
-                        'jamb_number' => $data['jamb_number'] ?? 'missing',
-                        'first_name' => $data['first_name'] ?? 'missing',
-                        'data_keys' => array_keys($data),
-                        'data_count' => count($data)
-                    ]);
+                    // Check for duplicate application number before inserting
+                    $existingApp = DB::table('applicants')
+                        ->where('application_number', $data['application_number'])
+                        ->first();
+
+                    if ($existingApp) {
+                        // Generate a new application number
+                        $data['application_number'] = $this->generateApplicationNumber($sessionId, $batchId);
+
+                        // Double-check the new number
+                        $stillExists = DB::table('applicants')
+                            ->where('application_number', $data['application_number'])
+                            ->exists();
+
+                        if ($stillExists) {
+                            throw new Exception("Unable to generate unique application number after retry");
+                        }
+                    }
 
                     // Use DB::table to bypass the model's newQuery override
                     DB::table('applicants')->insert(array_merge($data, [

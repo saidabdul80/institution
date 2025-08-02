@@ -312,6 +312,7 @@ class ApplicantsController extends Controller
 
             return new APIResource($response, false, 200 );
         }catch(Exception $e){
+            
             return new APIResource($e->getMessage(), true, 400 );
         }
     }
@@ -320,17 +321,21 @@ class ApplicantsController extends Controller
     {
         try{
      
-            $request->validate([            
-                "name"=>"required",
-                "file"=>"required",                
-            ]);
+          $validated = $request->validate([
+                    'file' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:5120', // 5MB max
+                    'name' => 'required|string|max:255',
+                    // Add other validation rules as needed
+                ]);
+
 
             $response = $this->applicantService->updateDocument($request);
 
             return new APIResource("Saved Successfuly", false, 200 );
         }catch(ValidationException $e){
+            Log::error($e);
             return new APIResource(formatError(array_values($e->errors())[0]), true, 400 );
         }catch(Exception $e){
+            Log::error($e);
             return new APIResource($e->getMessage(), true, 400 );
         }
     }

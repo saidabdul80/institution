@@ -192,30 +192,34 @@ class ApplicantsService{
     {
         $file = $request->file('file');
         $name = $request->input('name');
-        $disk = env('DISK');
+        $disk = config('filesystems.default'); // Use default disk (S3, local, etc.)
 
         if (!$file) {
             throw new \Exception('No file uploaded.');
         }
 
-        // Store the file on the specified disk and get the path
-        $filePath = Storage::disk($disk)->putFile('documents', $file);        
+        // Store file and get path (e.g., 'documents/filename.jpg')
+        $filePath = Storage::disk($disk)->putFile('documents', $file);
+
+        // Generate full URL (S3: https://bucket.s3.amazonaws.com/..., local: /storage/...)
         $url = Storage::disk($disk)->url($filePath);
 
-        // Check if a file with the same name already exists for the user
+        // Delete old file if it exists
         $existingFile = $this->applicantRepository->checkDocument($request->user()->id, $name);
-        
-        if ($existingFile?->name) {                
-            $key = basename($existingFile->url);
-            Storage::disk($disk)->delete("documents/{$key}");
+        if ($existingFile?->name) {
+            Storage::disk($disk)->delete($existingFile->url);
         }
 
-        // Insert or update the document record in the database
-        $response =  $this->applicantRepository->insertOrUpdateDocument($request->user()->id, $name, $url);
-        
+        // Insert/update document record
+        $response = $this->applicantRepository->insertOrUpdateDocument(
+            $request->user()->id,
+            $name,
+            $url,
+            $request->get('document_type')
+        );
+
         return $response;
     }
-
     public function getDocuments($request){
         $response =  $this->applicantRepository->getDocuments($request);
         return $response;
@@ -291,7 +295,11 @@ class ApplicantsService{
             }
 
             if($acceptanceFee['status'] == 'unpaid') {
-                return [$acceptanceFee];
+                if($applicant->admission_status == 'admitted'){
+                    return [$acceptanceFee];
+                }else{
+                    return [];
+                }
             }
         } 
             

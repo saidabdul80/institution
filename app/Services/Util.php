@@ -343,7 +343,7 @@ class Util
             case 'application_fee':
                 $applicant = Applicant::where('id', $payment->invoice->owner_id)->first();
                 $applicant->application_fee_paid = true;
-                $applicant->application_fee = 'paid';
+                //$applicant->application_fee = 'paid';
                 $applicant->application_fee_paid_at = now();
                 $applicant->save();
                 break;

@@ -34,6 +34,7 @@ Route::prefix('applicants')->group(function() {
         Route::get('/self', [ApplicantsController::class, 'getApplicantById']);
         Route::get('/alevel/{id}', [ApplicantsController::class, 'aLevelResult']);
         Route::get('/get_documents', [ApplicantsController::class, 'getDocuments']);
+        Route::get('/stats', [ApplicantsController::class, 'getStatf']);
         
        // Route::post('/create', [ApplicantsController::class, 'create']);
         Route::post('/update', [ApplicantsController::class, 'updateApplicant']);
