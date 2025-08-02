@@ -10,6 +10,7 @@ use Modules\Staff\Http\Controllers\ProgrammeController;
 use Modules\Staff\Http\Controllers\DashboardController;
 use Modules\Staff\Http\Controllers\AdmissionController;
 use Modules\Staff\Http\Controllers\ApplicantImportController;
+use Modules\Staff\Http\Controllers\PaymentCategoryController;
 use Modules\Staff\Http\Controllers\PermissionController;
 use Modules\Staff\Http\Controllers\ResultController;
 use Modules\Staff\Http\Controllers\StaffCourseController;
@@ -92,7 +93,7 @@ Route::prefix('staff')->group(function() {
             Route::post('/bulk_upload', [FacultyController::class, 'bulkUpload'])->middleware(['permission:can_create_faculty']);
             Route::post('/deactivate', [FacultyController::class, 'deactivate'])->middleware(['permission:can_delete_faculty']);
             Route::post('/activate', [FacultyController::class, 'activate'])->middleware(['permission:can_delete_faculty']);
-            Route::get('/template', [FacultyController::class, 'getTemplate'])->withoutMiddleware('tenancy');
+            Route::get('/template', [FacultyController::class, 'getTemplate']);//->withoutMiddleware('tenancy');
             Route::get('/faculties', [FacultyController::class, 'getFaculties']);
         });
 
@@ -102,7 +103,7 @@ Route::prefix('staff')->group(function() {
             Route::post('/bulk_upload', [DepartmentController::class, 'bulkUpload'])->middleware(['permission:can_create_department']);
             Route::post('/deactivate', [DepartmentController::class, 'deactivate'])->middleware(['permission:can_delete_department']);
             Route::post('/activate', [DepartmentController::class, 'activate'])->middleware(['permission:can_delete_department']);
-            Route::get('/template', [DepartmentController::class, 'getTemplate'])->withoutMiddleware('tenancy');
+            Route::get('/template', [DepartmentController::class, 'getTemplate']);//->withoutMiddleware('tenancy');
             Route::get('/departments', [DepartmentController::class, 'getDepartments']);
             Route::post('/departments', [DepartmentController::class, 'getDepartments']);
         });
@@ -136,7 +137,7 @@ Route::prefix('staff')->group(function() {
             Route::post('/deactivate', [ProgrammeController::class, 'deactivate'])->middleware(['permission:can_delete_programme']);
             Route::post('/activate', [ProgrammeController::class, 'activate'])->middleware(['permission:can_delete_programme']);
             Route::get('/programmes', [ProgrammeController::class, 'getProgrammes'])->middleware(['permission:can_view_programme']);
-            Route::get('/template', [ProgrammeController::class, 'getTemplate'])->withoutMiddleware('tenancy');
+            Route::get('/template', [ProgrammeController::class, 'getTemplate']);//->withoutMiddleware('tenancy');
         });
 
         Route::group(["prefix"=>"programme_course"], function () {
@@ -246,6 +247,7 @@ Route::prefix('staff')->group(function() {
             Route::post('/process', [ApplicantImportController::class, 'processImport'])->middleware('permission:can_import_applicants');
             Route::get('/history', [ApplicantImportController::class, 'getImportHistory'])->middleware('permission:can_view_applicant');
             Route::get('/template', [ApplicantImportController::class, 'downloadTemplate']);
+            Route::get('/sessions', [ApplicantImportController::class, 'getSessions']);
         });
 
         // Permission Management Routes
@@ -257,6 +259,15 @@ Route::prefix('staff')->group(function() {
             Route::post('/remove-role', [PermissionController::class, 'removeRole'])->middleware('permission:can_manage_roles');
             Route::get('/users', [PermissionController::class, 'getUsersWithRoles'])->middleware('permission:can_manage_roles');
             Route::post('/check', [PermissionController::class, 'checkPermission'])->middleware('permission:can_manage_permissions');
+        });
+
+        // Payment Category Management Routes
+        Route::group(["prefix"=>"payment-categories"], function () {
+            Route::get('/', [PaymentCategoryController::class, 'index'])->middleware('permission:can_manage_system_settings');
+            Route::post('/update-charges', [PaymentCategoryController::class, 'updateCharges'])->middleware('permission:can_manage_system_settings');
+            Route::post('/bulk-update-charges', [PaymentCategoryController::class, 'bulkUpdateCharges'])->middleware('permission:can_manage_system_settings');
+            Route::post('/calculate-charges', [PaymentCategoryController::class, 'calculateCharges']);
+            Route::post('/get-by-short-name', [PaymentCategoryController::class, 'getByShortName']);
         });
 
         Route::group(["prefix"=>"student"], function () {

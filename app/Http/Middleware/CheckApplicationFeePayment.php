@@ -24,8 +24,11 @@ class CheckApplicationFeePayment
                 'api/applicants/self',
                 'api/applicants/logout',
                 'api/applicants/payments',
+                'api/applicants/invoices',
                 'api/applicants/pay_application_fee',
-                'api/applicants/payment_status'
+                'api/applicants/payment_status',
+                'api/applicants/invoice_types',
+                'api/applicants/initiate_payment'
             ];
 
             $currentPath = $request->path();
@@ -42,7 +45,14 @@ class CheckApplicationFeePayment
                 'message' => 'Application fee payment required. Please pay your application fee to continue.',
                 'error' => true,
                 'requires_payment' => true,
-                'status_code' => 402
+                'status_code' => 402,
+                'guidance' => [
+                    'step_1' => 'Navigate to the Payments section',
+                    'step_2' => 'Select "Application Fee" payment type',
+                    'step_3' => 'Generate invoice and complete payment',
+                    'step_4' => 'Access will be granted after payment confirmation'
+                ],
+                'redirect_url' => '/application/payments'
             ], 402);
         }
 

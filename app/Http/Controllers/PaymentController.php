@@ -33,18 +33,6 @@ class PaymentController extends Controller
         return new ApiResource($payment,  false, 200);
     }
 
-    public function initiatePayment(Request $request)
-    {
-     
-        try {
-            $payment = $this->paymentService->initiatePay($request);
-            return new ApiResource($payment, false, 200);
-        } catch (ValidationException $e) {
-            return new ApiResource(array_values($e->errors())[0], true, 400);
-        } catch (Exception $e) {
-            return new ApiResource($e->getMessage(), true, $e->getCode());
-        }
-    }
 
     public function requery(Request $request)
     {
@@ -80,7 +68,7 @@ class PaymentController extends Controller
         }
     }
 
-     public function redirectToGateway(Request $request)
+     public function initiatePayment(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'invoice_id' => 'required',
@@ -101,7 +89,6 @@ class PaymentController extends Controller
         }
         
         $gateway = $request->gateway;
-        $thirPartyResponse = (bool)$request->header('x-client-id');
         return $this->beginPaymentProcess(
             $invoice_id, 
             $gateway, 
@@ -136,18 +123,21 @@ class PaymentController extends Controller
             
             $internalReference = Paystack::genTranxRef();
             $gatewayService = $this->gatewayFactory->create($gateway);
+            // Use total amount (amount + charges) for payment
+            $totalAmount = $invoice->total_amount;
+
             $paymentData  = $gatewayService->preparePaymentData(
-                $gateway, $invoice->amount, $owner_type, $owner_id, null, $invoice, $internalReference, null, $rrr
+                $gateway, $totalAmount, $owner_type, $owner_id, null, $invoice, $internalReference, null, $rrr
             );
-           
+           Log::info("paymentData2 : " . json_encode($paymentData));
             $payment = Payment::create($paymentData);
             $response = $this->handleGatewayPaymentRecord(
-                        $gateway, 
-                        $invoice, 
-                        $payment, 
-                        $paymentData, 
-                        $invoice->amount,
-                        $wallet, 
+                        $gateway,
+                        $invoice,
+                        $payment,
+                        $paymentData,
+                        $totalAmount,
+                        $wallet,
                         null
                     );
             DB::commit();
@@ -190,10 +180,18 @@ class PaymentController extends Controller
             $reference = $request->reference;
             
             $gatewayService = $this->gatewayFactory->create($gateway);
-            $gatewayService->handleCallback($reference);
-            return view('close');
+            $payment = $gatewayService->handleCallback($reference);
+            if($payment->owner_type == 'applicant'){
+                return redirect(config('default.portal.domain').'application/payments?status=successful');
+            }
+            return redirect(config('default.portal.domain').'student/payments?status=successful');
         } catch (\Exception $e) {
-            return response()->json(["error" => $e->getMessage()], 400);
+            dd($e->getMessage());
+            if(str_contains($e->getMessage(),'applicant')){
+                return redirect(config('default.portal.domain').'application/payments?status=failed');
+            }
+            return redirect(config('default.portal.domain').'student/payments?status=failed');
+            //return response()->json(["error" => $e->getMessage()], 400);
         }
     }
 

@@ -18,6 +18,8 @@ use App\Models\Applicant;
 use App\Models\Programme;
 use App\Models\EntryMode;
 use App\Models\LGA;
+use App\Models\Session;
+use Illuminate\Support\Facades\Log;
 
 class ApplicantImportController extends Controller
 {
@@ -96,6 +98,7 @@ class ApplicantImportController extends Controller
         } catch (ValidationException $e) {
             return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
+            Log::error($e);
             return new APIResource($e->getMessage(), true, 500);
         }
     }
@@ -202,11 +205,11 @@ class ApplicantImportController extends Controller
         }
 
         if (!empty($jambScores)) {
-            $data['jamb_subject_scores'] = json_encode($jambScores);
+            $data['jamb_subject_scores'] = json_encode($jambScores); // Let the model cast handle JSON encoding
         }
 
         // Add default values
-        $data['session_id'] = $sessionId;
+        $data['session_id'] =intval($sessionId);
         $data['password'] = Hash::make($rowData['jamb_number']); // Default password is JAMB number
         $data['application_number'] = $this->generateApplicationNumber($sessionId);
         $data['is_imported'] = true;
@@ -254,7 +257,7 @@ class ApplicantImportController extends Controller
     private function generateApplicationNumber($sessionId)
     {
         $session = DB::table('sessions')->find($sessionId);
-        $year = $session ? date('Y', strtotime($session->start_date)) : date('Y');
+        $year = $session ? date('Y', strtotime($session->name)) : date('Y');
 
         // Get the last application number for this session
         $lastApplicant = Applicant::where('session_id', $sessionId)
@@ -268,7 +271,7 @@ class ApplicantImportController extends Controller
             $nextNumber = isset($matches[1]) ? (int)$matches[1] + 1 : 1;
         }
 
-        return sprintf("COE/%s/IMP/%04d", $year, $nextNumber);
+        return sprintf("UTME/%s/IMP/%04d", $year, $nextNumber);
     }
 
     /**
@@ -283,6 +286,13 @@ class ApplicantImportController extends Controller
             ]);
 
             $batchId = $request->get('batch_id');
+            $sessionId = intval($request->get('session_id'));
+
+            // Verify session exists
+            $session = \App\Models\Session::find($sessionId);
+            if (!$session) {
+                return new APIResource('Invalid session ID. Please select a valid session.', true, 400);
+            }
 
             // Retrieve validated data from cache
             $validatedData = cache()->get("import_data_{$batchId}");
@@ -298,10 +308,49 @@ class ApplicantImportController extends Controller
 
             foreach ($validatedData as $data) {
                 try {
+                    // Ensure session_id is set correctly
+                    $data['session_id'] = $sessionId;
                     $data['import_batch_id'] = $batchId;
-                    $applicant = Applicant::create($data);
+
+                    // Validate required fields including foreign keys
+                    $requiredFields = [
+                        'first_name', 'surname', 'jamb_number', 'session_id',
+                        'applied_programme_id', 'programme_id', 'mode_of_entry_id'
+                    ];
+                    foreach ($requiredFields as $field) {
+                        if (empty($data[$field])) {
+                            throw new Exception("Required field '{$field}' is missing or empty");
+                        }
+                    }
+
+                    // Debug: Log the data being inserted
+                    Log::info('Creating applicant with data', [
+                        'session_id' => $data['session_id'],
+                        'jamb_number' => $data['jamb_number'] ?? 'missing',
+                        'first_name' => $data['first_name'] ?? 'missing',
+                        'data_keys' => array_keys($data),
+                        'data_count' => count($data)
+                    ]);
+
+                    // Use DB::table to bypass the model's newQuery override
+                    DB::table('applicants')->insert(array_merge($data, [
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]));
+
+                    // Get the created applicant for the response
+                    $applicant = DB::table('applicants')
+                        ->where('jamb_number', $data['jamb_number'])
+                        ->where('import_batch_id', $batchId)
+                        ->first();
                     $imported[] = $applicant;
                 } catch (Exception $e) {
+                    Log::error('Applicant import failed', [
+                        'data' => $data,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+
                     $failed[] = [
                         'data' => $data,
                         'error' => $e->getMessage()
@@ -320,14 +369,14 @@ class ApplicantImportController extends Controller
                 'failed_count' => count($failed),
                 'batch_id' => $batchId,
                 'failed_records' => $failed
-            ], false, 200);
+            ],  count($failed)>0,  count($failed)>0?400:200);
 
         } catch (ValidationException $e) {
             DB::rollBack();
             return new APIResource(array_values($e->errors())[0], true, 400);
         } catch (Exception $e) {
             DB::rollBack();
-            return new APIResource($e->getMessage(), true, 500);
+            return new APIResource($e->getMessage(), true, 400);
         }
     }
 
@@ -463,6 +512,19 @@ class ApplicantImportController extends Controller
                 'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             ]);
 
+        } catch (Exception $e) {
+            return new APIResource($e->getMessage(), true, 500);
+        }
+    }
+
+    /**
+     * Get available sessions for import
+     */
+    public function getSessions()
+    {
+        try {
+            $sessions = Session::orderBy('name', 'desc')->get(['id', 'name']);
+            return new APIResource($sessions, false, 200);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 500);
         }

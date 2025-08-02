@@ -47,6 +47,7 @@ use App\Models\InitiatedPaymentTaxInvoice;
 
 use App\Http\Resources\ConfigurationResource;
 use App\Http\Controllers\BeneficiaryController;
+use App\Models\Applicant;
 use App\Models\TicketCollection;
 use Laravel\Passport\Token;
 
@@ -302,8 +303,7 @@ class Util
         if (!$invoice) {
             Log::error("No invoice found for payment ID: {$payment->id}");
             return;
-        }
-
+        }  
         // Calculate remaining amount to apply
         $remainingAmount = max(0, $totalPaid - ($invoice->paid_amount ?? 0));
         
@@ -312,9 +312,7 @@ class Util
             return;
         }
 
-        // Determine payment application
-        $paidAmount = min($remainingAmount, $invoice->amount - ($invoice->paid_amount ?? 0));
-        $newPaidAmount = ($invoice->paid_amount ?? 0) + $paidAmount;
+        $newPaidAmount = ($invoice->paid_amount ?? 0) + $totalPaid;
         
         // Update invoice status based on payment
         $updateData = [
@@ -322,19 +320,42 @@ class Util
             'status' => $newPaidAmount >= $invoice->amount ? 'paid' : 'part paid'
         ];
 
-    
+        self::resolvePayment($payment, $invoice, $totalPaid);
         $invoice->update($updateData);
 
         $payment->update([
-            'paid_amount' => $newPaidAmount,
+            // 'paid_amount' => $newPaidAmount, ## it is already updated with the actual amount paid
             'paid_time' => $time ?? Carbon::now()->format('H:i:s'),
             'date' => $date ?? Carbon::now()->format('Y-m-d')
         ]);
 
-        if ($payment->gateway != 'wallet') {
-            PaymentSplitting::where('payment_id', $payment->id)->update(['status' => 1]);
+        if ($payment->gateway != 'wallet' && Util::getConfigValue('enable_split_payment') == 'true') {
+            PaymentSpliting::where('payment_id', $payment->id)->update(['status' => 1]);
         }
         return $payment;
+    }
+
+    private static function resolvePayment($payment)
+    {   
+        $paymentCategory =$payment->invoice->invoiceType->payment_category;
+
+        switch ($paymentCategory->short_name) {
+            case 'application_fee':
+                $applicant = Applicant::where('id', $payment->invoice->owner_id)->first();
+                $applicant->application_fee_paid = true;
+                $applicant->application_fee = 'paid';
+                $applicant->application_fee_paid_at = now();
+                $applicant->save();
+                break;
+            case 'registration_fee':
+                
+                break;
+            case 'acceptance_fee':
+
+                break;
+            default:
+                break;
+        }
     }
 
     static private function prepareShareLogic($array, $invoice, $payment_id, $paidAmount)
@@ -1702,31 +1723,26 @@ class Util
         return $subaccounts;
     }
 
-    private static function splitPayments($invoices, $amountToPay,$gateway){
+    private static function splitPayments($invoice, $amountToPay,$gateway){
 
         $allSubaccounts = collect();
         $amountLeft = $amountToPay;
 
-        foreach ($invoices as $invoice) {
-            $invoiceAmount = $invoice->amount;
-            
-            
-            if($amountLeft < $invoiceAmount){
-                $invoiceAmount  = $amountLeft;
-            }
 
-            
-            if( $invoiceAmount == 0){
-                continue;
-            }
-
-
-            $subaccounts = self::prepareSubaccountsForSplit($invoice, $invoiceAmount, $gateway);
-
-            $amountLeft -= $invoiceAmount;
-            $allSubaccounts = $allSubaccounts->merge($subaccounts);
-            
+        $invoiceAmount = $invoice->amount;
+        
+        
+        if($amountLeft < $invoiceAmount){
+            $invoiceAmount  = $amountLeft;
         }
+
+
+        $subaccounts = self::prepareSubaccountsForSplit($invoice, $invoiceAmount, $gateway);
+
+        $amountLeft -= $invoiceAmount;
+        $allSubaccounts = $allSubaccounts->merge($subaccounts);
+        
+    
         
        
         $totalAmount = $allSubaccounts->sum('amount');

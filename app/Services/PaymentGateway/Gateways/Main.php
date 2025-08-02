@@ -20,17 +20,11 @@ trait Main
         DB::beginTransaction();
 
         try {
-            $payment = Payment::where('payment_reference', $payment_reference)->firstOrFail();
-            $taxInvoices = $payment->taxInvoices;
-            $lastInvoice = $taxInvoices[$taxInvoices->count() - 1];
+            $payment = Payment::where('ourTrxRef', $payment_reference)->firstOrFail();
+            $invoice = $payment->invoice;
 
-            if ($taxInvoices->count() == 1 && $lastInvoice->status == 'paid' && $payment->status == 'successful') {
-                throw new \Exception('Payment has already been completed');
-            }
-
-            $unpaidInvoices = $taxInvoices->filter(fn($invoice) => $invoice->status !== 'paid');
-            if ($unpaidInvoices->isEmpty() && $payment->status == 'successful') {
-                throw new \Exception('Payment has already been completed for all invoices.');
+            if ($invoice->status == 'paid' && $payment->status == 'successful') {
+                abort(422, $payment->owner_type.': Payment has already been completed');
             }
 
             $payment->update([
@@ -38,14 +32,13 @@ trait Main
                 'channel' => $channel,
                 'status' => 'successful',
             ]);
-            
+            $amount = $amount - $charges - $invoice->charges;
             Util::processPaymentCompletion($payment, $amount, $paymentDate, $time);
 
             DB::commit();
-            return Payment::with('taxInvoices.taxable')->where('payment_reference', $payment_reference)->orWhere('payment_reference', $payment_reference)->first();
+            return Payment::with('invoice.owner')->where('ourTrxRef', $payment_reference)->first();
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error updating payment records: " . $e->getMessage());
             throw $e;
         }
     }
@@ -63,7 +56,7 @@ trait Main
             'owner_type' => $owner_type,
             'owner_id' => $owner_id,
             'description' => $description,
-            'invoice_id ' => $invoice->id,
+            'invoice_id' => $invoice->id,
             'session_id' => $invoice->session_id,
         ];
         //Log::info("paymentData : " . json_encode($paymentData));

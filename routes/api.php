@@ -65,7 +65,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     Route::post('/pdf/olevel-slip', [PDFController::class, 'olevelSlip']);
     
     //Route::post('/payments/pay', [PaymentsController::class, 'pay'])->middleware('idempotency');
-    Route::get('payment/{reference}', [PaymentController::class, 'show'])->middleware('idempotency');
+    Route::get('payment/callback/{gateway?}', [PaymentController::class, 'handleGatewayCallback']);//->middleware('idempotency');
+    Route::get('payment/{reference}', [PaymentController::class, 'show']);//->middleware('idempotency');
     Route::get('/invoice/{invoice_number}', [InvoiceController::class, 'getInvoice']);
     
     

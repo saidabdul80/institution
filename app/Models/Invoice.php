@@ -59,7 +59,7 @@ class Invoice extends Model
 
     public function getFullNameAttribute()
     {        
-        if ($this->invoiceType()?->owner_type === 'student') {
+        if ($this->invoiceType?->owner_type === 'student') {
             $student = Student::where("id", $this->owner_id)->first();
             return "{$student?->first_name} {$student?->middle_name} {$student?->surname}";
         } else {
@@ -73,7 +73,7 @@ class Invoice extends Model
 
     public function getMatricNumberAttribute()
     {
-        if ($this->invoiceType()?->owner_type === 'student') {
+        if ($this->invoiceType?->owner_type === 'student') {
             $student = Student::where("id", $this->owner_id)->first();
             return $student?->matric_number;
         }
@@ -82,7 +82,7 @@ class Invoice extends Model
 
     public function getApplicationNumberAttribute()
     {
-        if ($this->invoiceType()?->owner_type === 'applicant') {                   
+        if ($this->invoiceType?->owner_type === 'applicant') {                   
             $applicant = Applicant::where("id", $this->owner_id)->first();
             return $applicant?->application_number;            
         }
@@ -131,7 +131,7 @@ class Invoice extends Model
 
     public function applicant()
     {
-        if ($this->invoiceType()->owner_type === 'applicant') {
+        if ($this->invoiceType->owner_type === 'applicant') {
             return $this->hasOne(Applicant::class, 'id', 'owner_id');
         }
     }
@@ -161,7 +161,7 @@ class Invoice extends Model
 
     public function invoiceType()
     {
-        return InvoiceType::find($this->invoice_type_id);
+        return $this->belongsTo(InvoiceType::class);
     }
 
     // public function getPaidAtAttribute()

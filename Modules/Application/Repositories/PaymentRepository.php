@@ -115,7 +115,7 @@ use App\Models\Faculty;
             return $this->invoice::where(['owner_type'=>'applicant', 'owner_id' => $applicant_id])
                         ->with(['payment', 'invoice_type'=>function($query){
                                 $query->where('owner_type', 'applicant');
-                     }])->get();
+                     }])->latest()->get();
     }
 
     public function applicantPayments($session_id, $applicant_id)

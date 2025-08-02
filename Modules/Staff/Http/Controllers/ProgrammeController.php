@@ -62,7 +62,7 @@ class ProgrammeController extends Controller
         try{
 
             $request->validate([          
-                "faculty_id" =>"required",
+                // "faculty_id" =>"required",
                 "department_id" =>"required",
                 "name" =>"required",
                 "code" =>"required",

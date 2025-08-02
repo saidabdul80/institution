@@ -35,7 +35,7 @@ class PaystackGateway implements GatewayInterface
         $randomEmail = str::random(10).'@pay.ng';
         $data = [
             'amount' => ceil($totalAmount * 100),
-            'reference' => $payment->reference,
+            'reference' => $payment->ourTrxRef,
             'email' => isValidEmail($invoice?->owner?->email) ? $invoice?->owner?->email : $randomEmail,
             'first_name' => $invoice?->owner?->full_name ?? '',
             'phone' => $invoice?->owner?->phone_number ?? '',
@@ -57,7 +57,6 @@ class PaystackGateway implements GatewayInterface
     {
         $response = $this->verifyTransaction($reference);
 
-
         if ($response['status'] == 'success') {
              $paymentData = $response['data'];
             if($paymentData['status'] == "success"){
@@ -65,8 +64,7 @@ class PaystackGateway implements GatewayInterface
                     $this->handleWalletFundingCallback($reference, $paymentData);
                     $payment  = Payment::first();
                 } else {
-                    $payment = Payment::where('reference', $reference)->first();
-                  
+                    $payment = Payment::where('ourTrxRef', $reference)->first();
                     $amount  = ($paymentData["amount"]);
                     $charges = ( $paymentData["fees"] / 100);
                     $paymentDate = Carbon::parse($paymentData["paidAt"])->format('Y-m-d');
@@ -87,14 +85,15 @@ class PaystackGateway implements GatewayInterface
                 //     $payment->update(['status' => 0,'paid_amount' => 0]);
                 // }
 
-                abort(422,'Payment was abandoned');
+                abort(422,$payment->owner_type.': Payment was abandoned');
             }
         } else {
             $payment = Payment::where('reference', $reference)->first();
             if ($payment) {
                 $payment->update(['status' =>'failed']);
             }
-            abort(422, 'Verification failed for reference');
+            
+            abort(422, $payment->owner_type.': Verification failed for reference');
         }
     }
 

@@ -51,7 +51,7 @@ Route::prefix('applicants')->group(function() {
         Route::group(["prefix"=>"invoices"], function () {
             Route::get('/', [PaymentController::class, 'getApplicantInvoices']);
             Route::post('/generate', [CentralInvoiceController::class, 'generateInvoice']);
-            Route::post('/initiate_payment', [CentralPaymentController::class, 'redirectToGateway']);
+            Route::post('/initiate_payment', [CentralPaymentController::class, 'initiatePayment']);
         });
 
         

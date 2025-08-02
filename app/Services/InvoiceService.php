@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\TenantPaymentCharge;
+
 use App\Repositories\ApplicantRepository;
 use App\Repositories\ConfigurationRepository;
 use App\Repositories\InvoiceRepository;
@@ -122,8 +122,8 @@ class InvoiceService
             throw new \Exception("This payment has not been setup", 400);
         }
 
-        //$tenantCharge = TenantPaymentCharge::where(["payment_category_id" => $payment_category_id, "tenant_id" => tenant('id')])->first();
-        $charges = 500;        
+        // Calculate charges based on payment category
+        $charges = $paymentCategory->calculateCharges($invoice_type->amount);
         $invoiceDetails = [
             'invoice_number' => generateInvoiceNumber(),
             'owner_id' => $user->id,

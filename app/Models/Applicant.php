@@ -264,6 +264,10 @@ class Applicant extends Authenticatable
         
     }   
 
+    public function getApplicationFeeAttribute(){
+
+        return $this->application_fee_paid==1?'paid':'unpaid';
+    }
     public function getUserTypeAttribute(){
         return 'applicant';
     }

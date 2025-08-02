@@ -13,6 +13,10 @@ class PaymentCategory extends Model
     protected $table = "payment_categories";
     protected $fillable = ["*"];
     public $timestamps = false;
+
+    protected $casts = [
+        'charges' => 'decimal:2',
+    ];
     // public function __construct($attributes = array())
     // {
     //     parent::__construct($attributes);
@@ -24,5 +28,24 @@ class PaymentCategory extends Model
         return $data?->id;
     }
 
-  
+    /**
+     * Calculate charges based on amount and charge type
+     */
+    public function calculateCharges($amount)
+    {
+        if ($this->charge_type === 'percentage') {
+            return ($amount * $this->charges) / 100;
+        }
+
+        return $this->charges; // Fixed charge
+    }
+
+    /**
+     * Get total amount including charges
+     */
+    public function getTotalAmount($amount)
+    {
+        return $amount + $this->calculateCharges($amount);
+    }
+
 }

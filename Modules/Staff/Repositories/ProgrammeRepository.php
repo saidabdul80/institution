@@ -1,6 +1,7 @@
 <?php
 namespace Modules\Staff\Repositories;
 
+use App\Models\Faculty;
 use App\Models\Programme;
 use App\Models\ProgrammeCourses;
 use Illuminate\Support\Facades\Http;
@@ -48,6 +49,15 @@ class ProgrammeRepository{
     }
 
     public function create($data){
+        if(isset($data['faculty_id'])){
+            unset($data['faculty_id']);
+        }
+        if(isset($data['department_id'])){
+            unset($data['department_id']);
+        }
+        if(isset($data['session_id'])){
+            unset($data['session_id']);
+        }
         foreach($this->programme->appends_props as  $appends){
             if(isset($data[$appends])){
                 unset($data[$appends]);

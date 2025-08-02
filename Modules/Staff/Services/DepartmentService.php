@@ -92,6 +92,9 @@ class DepartmentService extends Utilities{
     }
     public function departments($request)
     {
+        if($request->has('withoutPaginate')){
+            return $this->departmentRepository->getDataWithoutPaginate($request->search);
+        }
        return $this->departmentRepository->getData($request->get('search'),$request->get('paginateBy'));
     }
 
