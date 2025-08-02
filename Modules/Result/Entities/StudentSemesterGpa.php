@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Staff\Entities;
+namespace Modules\Result\Entities;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -241,6 +241,6 @@ class StudentSemesterGpa extends Model
 
     protected static function newFactory()
     {
-        return \Modules\Staff\Database\factories\StudentSemesterGpaFactory::new();
+        return \Modules\Result\Database\factories\StudentSemesterGpaFactory::new();
     }
 }

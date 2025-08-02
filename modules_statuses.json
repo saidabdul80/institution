@@ -1,5 +1,6 @@
 {
     "Application": true,
     "Student": true,
-    "Staff": true
+    "Staff": true,
+    "Result": true
 }

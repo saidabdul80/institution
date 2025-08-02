@@ -1,0 +1,13 @@
+{
+    "name": "Result",
+    "alias": "result",
+    "description": "Result management module for academic institutions",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Result\\Providers\\ResultServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": []
+}
