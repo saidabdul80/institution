@@ -219,8 +219,8 @@ Route::prefix('staff')->group(function () {
             Route::post('/activate', [AdmissionController::class, 'activateStudent'])->middleware('permission:can_activate_student');
             Route::post('/update_qualified_status', [AdmissionController::class, 'updateQualifiedStatus'])->middleware('permission:can_set_applicant_qualification_status');
             Route::post('/update_admission_status', [AdmissionController::class, 'updateAdmissionStatus'])->middleware('permission:can_give_admission');
-            Route::post('/applicants', [AdmissionController::class, 'getApplicant'])->middleware('applicantAdmission');
-            Route::post('/get_batches', [AdmissionController::class, 'getBatches']); //->middleware('permission:can_view_applicant');
+            Route::post('/applicants', [AdmissionController::class, 'getApplicant'])->middleware('permission:can_view_applicant');
+            Route::post('/get_batches', [AdmissionController::class, 'getBatches'])->middleware('permission:can_view_applicant');
             Route::get('/template', [AdmissionController::class, 'getTemplate'])->withoutMiddleware('tenancy');
 
             /* Route::get('/change_department', [AdmissionController::class, 'changeDepartment']);

@@ -1,6 +1,7 @@
 <?php
 namespace Modules\Staff\Repositories;
 
+use App\Jobs\SendAdmissionEmail;
 use App\Models\AdmissionBatch;
 use App\Models\Invoice;
 use App\Models\Payment;
@@ -12,10 +13,12 @@ use App\Models\Applicant;
 use App\Models\PaymentCategory;
 use App\Models\Student;
 use App\Models\InvoiceType;
-
+use App\Models\Level;
+use App\Models\Programme;
 use App\Repositories\InvoiceRepository;
 use App\Services\Utilities;
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class AdmissionRepository{
 
@@ -28,6 +31,11 @@ class AdmissionRepository{
     private $admissionBatch;
     private $utilities;
     protected $invoiceRepository;
+     public $tries = 3; // Max attempts
+    public $maxExceptions = 2; // Max exceptions allowed
+    public $timeout = 60; // Timeout in seconds
+    public $backoff = [60, 120]; // Wait 60s then 120s between retries
+
     public function __construct(Student $student,Applicant $applicant,Payment $payment,PaymentCategory $paymentCategory, Invoice $invoice, InvoiceType $invoiceType, AdmissionBatch $admissionBatch, Utilities $utilities, InvoiceRepository $invoiceRepository)
     {
         $this->student = $student;
@@ -129,62 +137,174 @@ class AdmissionRepository{
         }
     }
 
-    public function admitApplicant($applicant_ids, $level_id = null, $programme_id = null){
-        $batch =  DB::table('configurations')->where('name','current_admission_batch')->first()->value;
+    // public function admitApplicant($applicant_ids, $level_id = null, $programme_id = null, $admission_options = []){
+    //     $batch =  DB::table('configurations')->where('name','current_admission_batch')->first()->value;
 
-        if(is_null($batch)){
+    //     if(is_null($batch)){
+    //         throw new \Exception('current batch not available in configuration');
+    //     }
+
+    //     // Parse admission options
+    //     $changeProgramme = $admission_options['change_programme'] ?? false;
+    //     $changeLevel = $admission_options['change_level'] ?? false;
+    //     $justAdmit = $admission_options['just_admit'] ?? false;
+    //     $newProgrammeId = $admission_options['new_programme_id'] ?? null;
+    //     $newLevelId = $admission_options['new_level_id'] ?? null;
+
+    //     $unpaidApplicantIds = [];
+    //     $applicants  = Applicant::whereIn('id',$applicant_ids)->get()->toArray();
+
+    //     $eligible_applicants = [];
+    //     foreach($applicants as $key => &$applicant){
+
+    //         // Determine programme_id based on admission options
+    //         if ($changeProgramme && $newProgrammeId) {
+    //             $programme_id_x = $newProgrammeId;
+    //         } elseif (!empty($programme_id)) {
+    //             $programme_id_x = $programme_id;
+    //         } else {
+    //             $programme_id_x = $applicant['applied_programme_id'];
+    //         }
+
+    //         // Determine level_id based on admission options
+    //         if ($changeLevel && $newLevelId) {
+    //             $level_id_x = $newLevelId;
+    //         } elseif (!empty($level_id)) {
+    //             $level_id_x = $level_id;
+    //         } else {
+    //             $level_id_x = $applicant['applied_level_id'];
+    //         }
+
+    //         if($applicant['application_fee'] == 'Paid'){
+    //             // Only update programme if we're changing it
+    //             if ($changeProgramme || !$justAdmit) {
+    //                 $applicant['programme_id'] = $programme_id_x;
+    //             }
+
+    //             // Only update level if we're changing it
+    //             if ($changeLevel || !$justAdmit) {
+    //                 $applicant['level_id'] = $level_id_x;
+    //             }
+
+    //             // Always update admission status and other core fields
+    //             $applicant['admission_status'] = 'admitted';
+    //             $applicant['qualified_status'] = 'qualified';
+    //             $applicant['batch_id'] = $batch;
+    //             $applicant['updated_at'] = now();
+    //             $applicants[$key] = $this->utilities->removeAllAccessors('applicants', $applicant);
+    //         }else{
+    //             $unpaidApplicantIds[] = $applicant['application_number'];
+    //         }
+
+    //     }
+
+    //     // Determine which fields to update based on admission options
+    //     $updateFields = ['admission_status', 'qualified_status', 'batch_id', 'updated_at'];
+
+    //     if ($changeProgramme || !$justAdmit) {
+    //         $updateFields[] = 'programme_id';
+    //     }
+
+    //     if ($changeLevel || !$justAdmit) {
+    //         $updateFields[] = 'level_id';
+    //     }
+    //     Log::error([
+    //         $applicants, ['id'], $updateFields
+    //     ]);
+    //     DB::table('applicants')->upsert($applicants, ['id'], $updateFields);
+
+    //     if(count($unpaidApplicantIds)>0){
+    //         return 'Admitted successfully, except for unpaid applicants ('.implode(',',$unpaidApplicantIds).')';
+    //     }
+    //     return 'Admitted successfully';
+
+    // }
+
+    public function admitApplicant($applicant_ids, $level_id = null, $programme_id = null, $admission_options = [], $session_id=null)
+    {
+        $batch = DB::table('configurations')->where('name','current_admission_batch')->first()->value;
+
+        $schoolName = DB::table('configurations')->where('name','school_name')->first()->value;
+        $schoolLogo = DB::table('configurations')->where('name','school_logo')->first()->value;
+        if (is_null($batch)) {
             throw new \Exception('current batch not available in configuration');
         }
 
-        $unpaidApplicantIds = [];        
-        $applicants  = Applicant::whereIn('id',$applicant_ids)->get()->toArray();         
+        // Parse admission options with defaults
+        $changeProgramme = $admission_options['change_programme'] ?? false;
+        $changeLevel = $admission_options['change_level'] ?? false;
+        $justAdmit = $admission_options['just_admit'] ?? false;
+        $newProgrammeId = $admission_options['new_programme_id'] ?? null;
+        $newLevelId = $admission_options['new_level_id'] ?? null;
 
-        $eligible_applicants = [];     
-        foreach($applicants as $key => &$applicant){            
-            if(!empty($programme_id)){
-                $programme_id_x = $programme_id;
+        $unpaidApplicantIds = [];
+        $applicants = Applicant::with('batch')->whereIn('id', $applicant_ids)->where('session_id', $session_id)->get();
+
+        $updates = [];
+           // Get programme and level details
+           if ($changeProgramme) {
+                $finalProgrammeId = $newProgrammeId;
             }else{
-                $programme_id_x = $applicant['applied_programme_id'] ;
+                $finalProgrammeId = $applicants[0]->applied_programme_id;
             }
 
-            if(!empty($level_id)){
-                $level_id_x = $level_id;
+            $programme = Programme::find($finalProgrammeId);
+            if ($changeLevel) {
+                $finalLevelId = $newLevelId;
             }else{
-                $level_id_x = $applicant['applied_level_id'];
+                $finalLevelId = $applicants[0]->applied_level_id?? $applicants[0]->level_id;
             }
+            $level = Level::find($finalLevelId);
+        foreach ($applicants as $applicant) {
+            // Skip unpaid applicants
             
-            if($applicant['application_fee'] == 'Paid'){     
-                $applicant['programme_id'] = $programme_id_x;                                           
-                $applicant['admission_status'] = 'admitted';                                           
-                $applicant['level_id'] = $level_id_x;                                           
-                $applicant['qualified_status'] = 'qualified';    
-                $applicant['batch_id'] = $batch;             
-                $applicant['updated_at'] = now();             
-                $applicants[$key] = $this->utilities->removeAllAccessors('applicants', $applicant);                
-            }else{
-                $unpaidApplicantIds[] = $applicant['application_number'];
+            if ($applicant->application_fee != 'paid') {
+                $unpaidApplicantIds[] = $applicant->application_number;
+                continue;
             }
 
-        }        
-        
-       /*  if(count($applicant_ids_to_be_admitted)){
-            Applicant::whereIn('id',$applicant_ids_to_be_admitted)->update([                
-                "admission_status" => 'admitted',
-                "qualified_status" => 'qualified',
-                "batch_id" => $batch,
-                "session_id" => $session_id
-            ]);
-        } */
-    
-        DB::table('applicants')->upsert($applicants,['id'], ['programme_id','admission_status','level_id','qualified_status','batch_id']);
+            // Determine the final programme_id
+            $finalProgrammeId = $changeProgramme && $newProgrammeId 
+                ? $newProgrammeId 
+                : ($programme_id ?: $applicant->applied_programme_id);
 
-        if(count($unpaidApplicantIds)>0){
-            return 'Admitted successfully, except for upaid applicants ('.implode(',',$unpaidApplicantIds).')';
+            // Determine the final level_id
+            $finalLevelId = $changeLevel && $newLevelId 
+                ? $newLevelId 
+                : ($level_id ?: $applicant->applied_level_id);
+
+            // Prepare update data
+            $updateData = [
+                'admission_status' => 'admitted',
+                'qualified_status' => 'qualified',
+                'batch_id' => $batch,
+                'updated_at' => now(),
+            ];
+
+            // Only update programme/level if we're changing them or not just admitting
+            if ($changeProgramme || !$justAdmit) {
+                $updateData['programme_id'] = $finalProgrammeId;
+            }
+            if ($changeLevel || !$justAdmit) {
+                $updateData['level_id'] = $finalLevelId;
+            }
+
+            // Add to bulk updates
+            $updates[] = array_merge(['id' => $applicant->id], $updateData);
+            SendAdmissionEmail::dispatch($applicant, $schoolName, $schoolLogo, $programme, $level)
+            ->onQueue('default');
         }
+
+        if (!empty($updates)) {
+            Applicant::whereIn('id', array_column($updates, 'id'))->update($updates[0]);
+        }
+
+        if (count($unpaidApplicantIds) > 0) {
+            return 'Admitted successfully, except for unpaid applicants (' . implode(',', $unpaidApplicantIds) . ')';
+        }
+        
         return 'Admitted successfully';
-
     }
-
     public function admitBulkApplicant ($application_numbers,$programme_id=null, $level_id=null){               
         $session_id =  DB::table('configurations')->where('name','current_application_session')->first()?->value;
         $applicant_ids = DB::table('applicants')->whereIn('application_number',$application_numbers)->pluck('id');
@@ -226,7 +346,7 @@ class AdmissionRepository{
 
     public function rejectThisApplicants($ids, $session_id){
         //$this->student::whereIn('applicant_id', $ids)->delete();//remove from student table
-        $this->applicant::whereIn('applicant_id', $ids)->update(['admission_status'=>'rejected','qualified_status'=>'not qualified']);
+        $this->applicant::whereIn('applicant_id', $ids)->where('session_id', $session_id)->update(['admission_status'=>'rejected']);
 
     }
     public function activateStudent($matric_number, $session_id){

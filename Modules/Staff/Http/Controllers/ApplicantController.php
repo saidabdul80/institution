@@ -89,7 +89,7 @@ class ApplicantController extends Controller
         try {
             $request->validate([
                 'applicant_id' => 'required',
-                'status' => 'required|in:admitted,not_admitted,pending'
+                'status' => 'required|in:admitted,not_admitted,rejected'
             ]);
 
             $response = $this->applicantService->updateApplicantStatus($request);

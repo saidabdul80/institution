@@ -277,5 +277,9 @@ class Applicant extends Authenticatable
         return $query;
     }
 
+    public function batch(){
+        return $this->belongsTo(AdmissionBatch::class,'batch_id');
+    }
+    
     protected $appends = ['matric_number','qualify' ,'level', 'programme_name', 'programme_type','entry_mode', 'active_state', 'state','country','faculty','department','lga', 'qualification', 'full_name','admitted_programme_name','user_type','submitted_date_ago'];
 }

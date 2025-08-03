@@ -1,0 +1,21 @@
+# Laravel Queue Worker Service File
+# Copy this to /etc/systemd/system/laravel-queue.service (Linux)
+# Then run: sudo systemctl enable laravel-queue && sudo systemctl start laravel-queue
+
+[Unit]
+Description=Laravel Queue Worker
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+Restart=always
+RestartSec=5s
+WorkingDirectory=/path/to/your/laravel/project
+ExecStart=/usr/bin/php artisan queue:work --daemon --sleep=3 --tries=3 --timeout=90
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

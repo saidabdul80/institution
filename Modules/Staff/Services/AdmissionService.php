@@ -23,8 +23,14 @@ class AdmissionService extends Utilities{
     }
 
 
-    public function acceptApplicant($request){        
-        return $this->admissionRepository->admitApplicant(applicant_ids:$request->get('applicant_ids'), level_id:$request->get('level_id'), programme_id:$request->get('programme_id'));
+    public function acceptApplicant($request){
+        return $this->admissionRepository->admitApplicant(
+            applicant_ids: $request->get('applicant_ids'),
+            level_id: $request->get('level_id'),
+            programme_id: $request->get('programme_id'),
+            admission_options: $request->get('admission_options', []),
+            session_id: $request->get('session_id')
+        );
     }
 
     public function bulkAcceptApplicant($request){

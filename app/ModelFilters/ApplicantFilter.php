@@ -18,18 +18,23 @@ class ApplicantFilter extends ModelFilter
 
     public function qualifiedStatus($search)
     {
-        return $this->where(function($q) use ($search)
-        {
-            return $q->whereIn('qualified_status', $search);
-        });
+        
+        if(is_array($search)){
+            $this->whereIn('qualified_status', $search);
+        }else{
+            $this->where('qualified_status', $search);
+        }
+       
     }
 
     public function admissionStatus($search)
     {
-        return $this->where(function($q) use ($search)
-        {
-            return $q->whereIn('admission_status',$search);
-        });
+        if(is_array($search)){
+            $this->whereIn('admission_status', $search);
+        }else{
+            $this->where('admission_status', $search);
+        }
+       
     }
 
     public function paymentStatus($search)

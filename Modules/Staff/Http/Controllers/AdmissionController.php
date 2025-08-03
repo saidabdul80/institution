@@ -10,6 +10,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Modules\Staff\Services\AdmissionService;
 use Modules\Staff\Services\Utilities;
 use Modules\Staff\Transformers\UtilResource;
@@ -34,9 +35,14 @@ class AdmissionController extends Controller
         try{
 
             $request->validate([
-                "applicant_ids" => "required", //[]
-                //"maintain_programme_id" =>"required",
-                "session_id"   =>"required",                
+                "applicant_ids" => "required|array", //[]
+                "session_id"   =>"required",
+                "admission_options" => "nullable|array",
+                "admission_options.change_programme" => "nullable|boolean",
+                "admission_options.change_level" => "nullable|boolean",
+                "admission_options.just_admit" => "nullable|boolean",
+                "admission_options.new_programme_id" => "nullable|integer|exists:programmes,id",
+                "admission_options.new_level_id" => "nullable|integer|exists:levels,id",
             ]);
 
             $response = $this->admissionService->acceptApplicant($request);
@@ -45,6 +51,7 @@ class AdmissionController extends Controller
         }catch(ValidationException $e){
             return new APIResource(array_values($e->errors())[0], true, 400 );
         }catch(Exception $e){
+            Log::error($e);
             return new APIResource($e->getMessage(), true, 400 );
         }
 

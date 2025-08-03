@@ -33,7 +33,7 @@ class ApplicantRepository{
      */
     public function getAllApplicants($filters = [])
     {
-        $query = $this->applicant->query();
+        $query = $this->applicant->with('olevel')->query();
 
         // Apply filters
         if (isset($filters['programme_id']) && $filters['programme_id']) {

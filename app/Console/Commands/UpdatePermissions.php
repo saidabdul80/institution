@@ -96,6 +96,7 @@ class UpdatePermissions extends Command
             $this->line("Processing {$category} permissions...");
             
             foreach ($categoryPermissions as $permission) {
+                  $this->line($permission);
                 if (!Permission::where('name', $permission)->exists()) {
                     Permission::create([
                         'name' => $permission,

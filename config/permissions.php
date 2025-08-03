@@ -99,6 +99,9 @@ return [
             'can_assign_courses_to_staff' => 'Assign courses to staff',
             'can_manage_staff_permissions' => 'Manage staff permissions',
             'can_view_staff_performance' => 'View staff performance',
+            "can_view_students" => 'Allow View students',
+            "can_promote_students" => '',
+            "can_reverse_students_promotion" => ''
         ],
         
         'system_management' => [
