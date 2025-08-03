@@ -223,6 +223,17 @@ Route::prefix('staff')->group(function () {
             Route::post('/get_batches', [AdmissionController::class, 'getBatches'])->middleware('permission:can_view_applicant');
             Route::get('/template', [AdmissionController::class, 'getTemplate'])->withoutMiddleware('tenancy');
 
+            // Publication routes
+            Route::post('/unpublished', [AdmissionController::class, 'getUnpublishedAdmissions'])->middleware('permission:can_view_applicant');
+            Route::post('/publish', [AdmissionController::class, 'publishAdmissions'])->middleware('permission:can_give_admission');
+            Route::post('/unpublish', [AdmissionController::class, 'unpublishAdmissions'])->middleware('permission:can_give_admission');
+            Route::post('/publication_stats', [AdmissionController::class, 'getPublicationStats'])->middleware('permission:can_view_applicant');
+
+            // Batch publication routes
+            Route::post('/publish_batch', [AdmissionController::class, 'publishByBatch'])->middleware('permission:can_give_admission');
+            Route::post('/unpublish_batch', [AdmissionController::class, 'unpublishByBatch'])->middleware('permission:can_give_admission');
+            Route::post('/bulk_action', [AdmissionController::class, 'handleBulkAction'])->middleware('permission:can_give_admission');
+
             /* Route::get('/change_department', [AdmissionController::class, 'changeDepartment']);
             Route::get('/change_faculty', [AdmissionController::class, 'changeFaculty']);
             Route::get('/change_level', [AdmissionController::class, 'changeLevel']); */

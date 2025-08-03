@@ -27,12 +27,20 @@ class Applicant extends Authenticatable
         'application_fee_paid' => 'boolean',
         'imported_at' => 'datetime',
         'application_fee_paid_at' => 'datetime',
+        'published_at' => 'datetime',
     ];
     /*  protected static function newFactory()
     {
 
         return \Database\factories\ApplicantFactory::new();
     } */
+    protected $subjects;
+
+    public function __construct($attributes = [])
+    {
+        parent::__construct($attributes);
+        $this->subjects = Subject::all();
+    }
 
     public function modelFilter()
     {
@@ -151,63 +159,75 @@ class Applicant extends Authenticatable
         return LGA::find($this->lga_id)?->name;
     }
 
-    public function getQualifyAttribute() {
-        $olevelResuts = OlevelResult::where('applicant_id',$this->id)->pluck('subjects_grades');
-        $programme = Programme::where('id',$this->applied_programme_id)->first();
-        $subjects = !empty($programme?->required_subjects)? (is_array($programme?->required_subjects)?$programme?->required_subjects: explode(',',$programme?->required_subjects)):[];
-        $grades =   !empty($programme?->accepted_grades)? collect(explode(',',$programme?->accepted_grades))->map(function($item){
-                                                                    return strtolower($item);
-                                                                })->toArray():[];
-        $pass = 0;
-        $checkSubject = [];
-        $checkSubject2 = [];
+  public function getQualifyAttribute() {
+    $olevelResults = OlevelResult::where('applicant_id', $this->id)->pluck('subjects_grades');
+    $programme = Programme::where('id', $this->applied_programme_id)->first();
+    $required_subjects = $this->subjects->filter(function ($subject) use ($programme) {
+        return in_array($subject->id, $programme->required_subjects);
+    })->pluck('name')->toArray();
+    $subjects = !empty($required_subjects) ? 
+                (is_array($required_subjects) ? $required_subjects : explode(',', $required_subjects)) : [];
+    $grades = !empty($programme?->accepted_grades) ? 
+              collect(explode(',', $programme?->accepted_grades))
+                  ->map(function($item) {
+                      return strtoupper(trim($item)); // Normalize to uppercase and trim whitespace
+                  })->toArray() : [];
+    
+    $checkSubject = [];
+    $checkSubject2 = [];
 
-        if(empty($subjects)){
-            return ["is_qualify"=>true, "info" => 'no required subjects set'];
+    if (empty($subjects)) {
+        return ["is_qualify" => true, "info" => 'no required subjects set'];
+    }
+
+    // Check if we should compare only the letter part (e.g., "A" from "A1")
+    $compareLetterOnly = collect($grades)->contains(function ($grade) {
+        return ctype_alpha($grade);
+    });
+
+    foreach ($olevelResults as $key => $olevelResult) {
+        // Parse the result data
+        $result = is_string($olevelResult) ? json_decode($olevelResult, true) : (array)$olevelResult;
+        
+        if (!is_array($result)) {
+            continue;
         }
-        foreach ($olevelResuts as $key => $olevelResut) {
-            // Ensure $result is always an array
-            if (is_string($olevelResut)) {
-                $result = json_decode($olevelResut, true); // Add true for associative array
-            } else {
-                $result = (array) $olevelResut; // Cast to array if not already
-            }
 
-            // Skip invalid results
-            if (!is_array($result)) {
+        // Process the grades, converting to uppercase
+        $oResult = collect($result)->mapWithKeys(function ($grade, $subject) {
+            return [ucfirst(strtolower($subject)) => strtoupper($grade)];
+        });
+
+        foreach ($subjects as $subject) {
+            $subjectKey = ucfirst(strtolower($subject));
+            
+            if (!$oResult->has($subjectKey)) {
+                $checkSubject[$subject] = $key == 0 ? 0 : ($checkSubject2[$subject] = 0);
                 continue;
             }
 
-            // Safely process results
-            $oResult = collect($result)->flatMap(function ($values) {
-                // Ensure $values is an array before mapping
-                $values = is_array($values) ? $values : (array) $values;
-                return array_map('strtolower', $values);
-            });
+            $subjectGrade = $oResult[$subjectKey];
+            $gradeToCompare = $compareLetterOnly ? substr($subjectGrade, 0, 1) : $subjectGrade;
 
-            foreach ($subjects as $subject) {
-                $subjectKey = str_replace('"', '', ucfirst($subject));
-                $subjectExists = $oResult->has($subjectKey);
-
-                if ($subjectExists && in_array($oResult[$subjectKey], $grades)) {
-                    $checkSubject[$subject] = $key == 0 ? 1 : ($checkSubject2[$subject] = 1);
-                } else {
-                    $checkSubject[$subject] = $key == 0 ? 0 : ($checkSubject2[$subject] = 0);
-                }
+            if (in_array($gradeToCompare, $grades)) {
+                $checkSubject[$subject] = $key == 0 ? 1 : ($checkSubject2[$subject] = 1);
+            } else {
+                $checkSubject[$subject] = $key == 0 ? 0 : ($checkSubject2[$subject] = 0);
             }
         }
-
-        $first  = array_sum(array_values($checkSubject));
-        $second  = array_sum(array_values($checkSubject2));
-        if($first == count($subjects)){
-            return ["is_qualify"=>true, "info" => 'One Result'];
-        }else if($first + $second >= count($subjects)){
-            return ["is_qualify"=>true, "info" => 'Two Result'];
-        }
-
-        return ["is_qualify"=>false, "info" => 'Admission requirements not met'];
     }
 
+    $first = array_sum(array_values($checkSubject));
+    $second = array_sum(array_values($checkSubject2));
+    
+    if ($first == count($subjects)) {
+        return ["is_qualify" => true, "info" => 'One Result'];
+    } elseif ($first + $second >= count($subjects)) {
+        return ["is_qualify" => true, "info" => 'Two Result'];
+    }
+
+    return ["is_qualify" => false, "info" => 'Admission requirements not met'];
+    }
     public function scopeSearch($query, $search)
     {
         if(!is_null($search)){
@@ -280,6 +300,45 @@ class Applicant extends Authenticatable
     public function batch(){
         return $this->belongsTo(AdmissionBatch::class,'batch_id');
     }
-    
+
+    // Publication related scopes and methods
+    public function scopePublished($query)
+    {
+        return $query->whereNotNull('published_at');
+    }
+
+    public function scopeUnpublished($query)
+    {
+        return $query->whereNull('published_at');
+    }
+
+    public function scopeAdmittedUnpublished($query)
+    {
+        return $query->where('admission_status', 'admitted')->whereNull('published_at');
+    }
+
+    public function isPublished()
+    {
+        return !is_null($this->published_at);
+    }
+
+    public function publish($publishedBy = null, $notes = null)
+    {
+        $this->update([
+            'published_at' => now(),
+            'published_by' => $publishedBy,
+            'publication_notes' => $notes,
+        ]);
+    }
+
+    public function unpublish()
+    {
+        $this->update([
+            'published_at' => null,
+            'published_by' => null,
+            'publication_notes' => null,
+        ]);
+    }
+
     protected $appends = ['matric_number','qualify' ,'level', 'programme_name', 'programme_type','entry_mode', 'active_state', 'state','country','faculty','department','lga', 'qualification', 'full_name','admitted_programme_name','user_type','submitted_date_ago'];
 }

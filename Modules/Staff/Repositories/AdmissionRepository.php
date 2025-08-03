@@ -291,8 +291,10 @@ class AdmissionRepository{
 
             // Add to bulk updates
             $updates[] = array_merge(['id' => $applicant->id], $updateData);
-            SendAdmissionEmail::dispatch($applicant, $schoolName, $schoolLogo, $programme, $level)
-            ->onQueue('default');
+
+            // Email sending removed - will be sent when admission is published
+            // SendAdmissionEmail::dispatch($applicant, $schoolName, $schoolLogo, $programme, $level)
+            // ->onQueue('default');
         }
 
         if (!empty($updates)) {
@@ -378,7 +380,7 @@ class AdmissionRepository{
     }
 
     public function admissionBatches($session_id){
-        return Student::distinct()->where('session_id', $session_id)->get()->pluck('batch');
+        return Applicant::with('batch')->groupBy('batch_id')->where('batch_id', '!=', null)->where('session_id', $session_id)->get()->pluck('batch');
     }
 
 
