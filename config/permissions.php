@@ -24,7 +24,7 @@ return [
             'can_approve_applicant_documents' => 'Approve applicant documents',
             'can_view_report_dashboard' => 'View Report Dashboard',
         ],
-        
+
         'admission_management' => [
             'can_give_admission' => 'Give admission to applicants',
             'can_view_admission' => 'View admission information',
@@ -37,7 +37,7 @@ return [
             'can_view_admission_dashboard' => 'View admission dashboard',
             'can_change_student_programme' => 'Change student programme',
         ],
-        
+
         'student_management' => [
             'can_view_student' => 'View student information',
             'can_view_students' => 'View students list',
@@ -54,7 +54,7 @@ return [
             'can_generate_student_transcript' => 'Generate student transcripts',
             'can_generate_transcript' => 'Generate transcripts',
         ],
-        
+
         'academic_setup' => [
             'can_manage_faculties' => 'Manage faculties',
             'can_create_faculty' => 'Create faculty',
@@ -104,7 +104,7 @@ return [
             'can_delete_programme_type' => 'Delete programme type',
             'can_view_programme_type' => 'View programme type',
         ],
-        
+
         'result_management' => [
             'can_input_results' => 'Input student results',
             'can_edit_results' => 'Edit student results',
@@ -113,8 +113,9 @@ return [
             'can_view_results' => 'View student results',
             'can_generate_transcripts' => 'Generate transcripts',
             'can_manage_result_templates' => 'Manage result templates',
+            'can_view_results' => 'View Result',
         ],
-        
+
         'staff_management' => [
             'can_view_staff' => 'View staff information',
             'can_create_staff' => 'Create new staff',
@@ -129,7 +130,7 @@ return [
             'can_view_staff_allocations' => 'View staff course allocations',
             'can_manage_staff_allocations' => 'Manage staff course allocations',
         ],
-        
+
         'system_management' => [
             'can_manage_permissions' => 'Manage system permissions',
             'can_manage_roles' => 'Manage user roles',
@@ -145,7 +146,7 @@ return [
             'can_revoke_permission' => 'Revoke permissions from users',
             'can_view_permission' => 'View permissions',
         ],
-        
+
         'payment_management' => [
             'can_view_payments' => 'View payment information',
             'can_process_payments' => 'Process payments',
@@ -155,7 +156,7 @@ return [
             'can_confirm_payment' => 'Confirm payments manually',
             'can_view_payment' => 'View payment details',
         ],
-        
+
         'reporting' => [
             'can_generate_reports' => 'Generate system reports',
             'can_view_analytics' => 'View system analytics',
@@ -184,7 +185,7 @@ return [
             'description' => 'Full system access with all permissions',
             'permissions' => 'all' // Special value meaning all permissions
         ],
-        
+
         'Admin' => [
             'description' => 'Administrative access with most permissions',
             'permissions' => [
@@ -254,6 +255,7 @@ return [
                 'can_approve_results',
                 'can_compute_results',
                 'can_view_results',
+                'can_manage_grade_settings',
 
                 // Staff Management
                 'can_view_staff',
@@ -297,7 +299,7 @@ return [
                 'can_view_finance_dashboard',
             ]
         ],
-        
+
         'Registrar' => [
             'description' => 'Student records and academic management',
             'permissions' => [
@@ -338,7 +340,7 @@ return [
                 'can_view_report_dashboard',
             ]
         ],
-        
+
         'Admission Officer' => [
             'description' => 'Applicant and admission management',
             'permissions' => [
@@ -371,7 +373,7 @@ return [
                 'can_view_report_dashboard',
             ]
         ],
-        
+
         'Academic Officer' => [
             'description' => 'Academic setup and course management',
             'permissions' => [
@@ -418,7 +420,7 @@ return [
                 'can_view_results',
             ]
         ],
-        
+
         'Lecturer' => [
             'description' => 'Teaching staff with result input access',
             'permissions' => [
@@ -436,7 +438,7 @@ return [
                 'can_view_programme',
             ]
         ],
-        
+
         'Accountant' => [
             'description' => 'Financial and payment management',
             'permissions' => [
@@ -462,6 +464,13 @@ return [
 
                 // System Management
                 'can_manage_system_settings',
+
+                // Applicant Management
+                'can_view_applicant',
+                'can_view_payment',
+
+                // Student Management
+                'can_view_student',
 
                 // Reporting
                 'can_generate_reports',
