@@ -300,8 +300,7 @@ class ResultController extends Controller
                 'max_score' => 'required|numeric|min:0|max:100|gte:min_score',
                 'grade' => 'required|string|max:2',
                 'grade_point' => 'required|numeric|min:0|max:5',
-                'status' => 'required|in:pass,fail',
-                'description' => 'nullable|string|max:255'
+                'status' => 'required|in:pass,fail'
             ]);
 
             $gradeSettingData = $request->only([
@@ -310,8 +309,7 @@ class ResultController extends Controller
                 'max_score',
                 'grade',
                 'grade_point',
-                'status',
-                'description'
+                'status'
             ]);
             $gradeSettingData['created_by'] = auth('api-staff')->id();
 
