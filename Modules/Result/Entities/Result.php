@@ -2,16 +2,17 @@
 
 namespace Modules\Result\Entities;
 
+use App\Models\Course;
+use App\Models\Department;
+use App\Models\Faculty as ModelsFaculty;
+use App\Models\Level;
+use App\Models\ProgrammeCurriculum;
+use App\Models\Session;
+use App\Models\Student;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Modules\Staff\Entities\Faculty;
-use Modules\Staff\Entities\Department;
-use Modules\Staff\Entities\Level;
-use Modules\Staff\Entities\Session;
-use Modules\Staff\Entities\Course;
-use Modules\Staff\Entities\Programme;
-use Modules\Student\Entities\Student;
-use Modules\Staff\Entities\Staff;
+use Staff;
 
 class Result extends Model
 {
@@ -26,6 +27,7 @@ class Result extends Model
         'semester',
         'level_id',
         'programme_id',
+        'programme_curriculum_id',
         'department_id',
         'faculty_id',
         'ca_score',
@@ -87,7 +89,7 @@ class Result extends Model
      */
     public function programme()
     {
-        return $this->belongsTo(Programme::class);
+        return $this->belongsTo(ProgrammeCurriculum::class, 'programme_curriculum_id');
     }
 
     /**
@@ -103,7 +105,7 @@ class Result extends Model
      */
     public function faculty()
     {
-        return $this->belongsTo(Faculty::class);
+        return $this->belongsTo(ModelsFaculty::class);
     }
 
     /**

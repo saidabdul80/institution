@@ -2,28 +2,26 @@
 
 namespace Modules\Result\Repositories;
 
+use App\Student;
 use Exception;
 use Illuminate\Support\Facades\DB;
-use Modules\Student\Entities\Student;
-use Modules\Staff\Entities\Course;
-use Modules\Result\Entities\StudentCourseGrade;
-use Modules\Staff\Entities\Session;
-use Modules\Staff\Entities\Level;
-use Modules\Staff\Entities\Programme;
+
 use Maatwebsite\Excel\Facades\Excel;
+use Modules\Result\Entities\StudentCourseGrade;
 
 class ResultRepository
 {
     /**
      * Compute results for students
      */
-    public function computeResults($sessionId, $levelId, $programmeId, $semester)
+    public function computeResults($sessionId, $levelId, $programmeId, $programmeCurriculumId, $semester)
     {
         // Get all students in the specified criteria
         $students = Student::where([
             'session_id' => $sessionId,
             'level_id' => $levelId,
-            'programme_id' => $programmeId
+            'programme_id' => $programmeId,
+            'programme_curriculum_id' => $programmeCurriculumId
         ])->get();
 
         $computedCount = 0;
@@ -119,24 +117,26 @@ class ResultRepository
     /**
      * Get students for result computation
      */
-    public function getStudentsForComputation($sessionId, $levelId, $programmeId, $semester)
+    public function getStudentsForComputation($sessionId, $levelId, $programmeId, $programmeCurriculumId, $semester)
     {
         return Student::where([
             'session_id' => $sessionId,
             'level_id' => $levelId,
-            'programme_id' => $programmeId
+            'programme_id' => $programmeId,
+            'programme_curriculum_id' => $programmeCurriculumId
         ])->with(['programme', 'level'])->paginate(50);
     }
 
     /**
      * Get students with existing results/scores for a specific course
      */
-    public function getStudentsWithResults($sessionId, $levelId, $programmeId, $courseId, $semester)
+    public function getStudentsWithResults($sessionId, $levelId, $programmeId, $programmeCurriculumId, $courseId, $semester)
     {
         $students = Student::where([
             'session_id' => $sessionId,
             'level_id' => $levelId,
-            'programme_id' => $programmeId
+            'programme_id' => $programmeId,
+            'programme_curriculum_id' => $programmeCurriculumId
         ])->get();
 
         $studentsWithResults = [];
@@ -189,7 +189,7 @@ class ResultRepository
     /**
      * Bulk upload results from file
      */
-    public function bulkUploadResults($file, $sessionId, $levelId, $programmeId, $courseId, $semester)
+    public function bulkUploadResults($file, $sessionId, $levelId, $programmeId, $programmeCurriculumId, $courseId, $semester)
     {
         try {
             $data = Excel::toArray([], $file)[0];

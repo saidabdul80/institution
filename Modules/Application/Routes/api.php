@@ -47,6 +47,18 @@ Route::prefix('applicants')->group(function() {
         Route::post('/update_documents', [ApplicantsController::class, 'updateDocument']);
         Route::post('/alevel', [ApplicantsController::class, 'updateALevel']);
         Route::post('/wallet', [ApplicantsController::class, 'getWallet']);
+
+        // Final Submission Routes
+        Route::post('/final_submit', [ApplicantsController::class, 'finalSubmit']);
+
+        // Document Routes
+        Route::get('/acknowledgment_slip/download', [ApplicantsController::class, 'downloadAcknowledgmentSlip']);
+        Route::get('/verification_slip/download', [ApplicantsController::class, 'downloadVerificationSlip']);
+
+        // Admission Letter Routes
+        Route::get('/admission_letter', [ApplicantsController::class, 'getAdmissionLetter']);
+        Route::get('/admission_letter/download', [ApplicantsController::class, 'downloadAdmissionLetter']);
+
         Route::post('/payment', [PaymentController::class, 'store']);
         Route::post('/get_payment', [PaymentController::class, 'distinct']);
 

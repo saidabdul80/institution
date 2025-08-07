@@ -10,7 +10,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Validation\ValidationException;
 use Exception;
 use Illuminate\Support\Facades\DB;
-use Modules\Staff\Entities\StaffCourseAllocation;
+use Modules\Result\Entities\StaffCourseAllocation;
 
 class StaffCourseController extends Controller
 {

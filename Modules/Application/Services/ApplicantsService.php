@@ -60,7 +60,7 @@ class ApplicantsService{
             $state = $searchObj['state_id']??"";
             $country = $searchObj['country_id']??"";
             $department_id = $searchObj['department_id']??"";
-            $applied_programme_id = $searchObj['applied_programme_id']??"";
+            $applied_programme_curriculum_id = $searchObj['applied_programme_curriculum_id']??"";
             $mode_of_entry_id = $searchObj['mode_of_entry_id']??"";
             $health_status = $searchObj['health_status']??"";
             $payment_open = $searchObj['payment_open']??"";
@@ -73,7 +73,7 @@ class ApplicantsService{
                 "country_id"=>$country,
                 "session_id"=>$session_id,
                 "department_id"=>$department_id,
-                "applied_programme_id"=>$applied_programme_id,
+                "applied_programme_curriculum_id"=>$applied_programme_curriculum_id,
                 "mode_of_entry_id"=>$mode_of_entry_id,
                 "health_status"=>$health_status,
                 "payment_open"=>$payment_open,
@@ -191,7 +191,7 @@ class ApplicantsService{
     public function updateDocument($request)
     {
         $file = $request->file('file');
-        $name = $request->input('name');
+        $name = $request->input('document_type');
         $disk = config('filesystems.default'); // Use default disk (S3, local, etc.)
 
         if (!$file) {
@@ -213,7 +213,7 @@ class ApplicantsService{
         // Insert/update document record
         $response = $this->applicantRepository->insertOrUpdateDocument(
             $request->user()->id,
-            $name,
+            \str_replace('_', ' ', $name),
             $url,
             $request->get('document_type')
         );

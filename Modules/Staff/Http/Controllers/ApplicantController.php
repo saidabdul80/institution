@@ -82,6 +82,20 @@ class ApplicantController extends Controller
     }
 
     /**
+     * Get individual applicant by ID
+     */
+    public function getApplicantById(Request $request, $id)
+    {
+        try {
+            $response = $this->applicantService->getApplicantById($id);
+            return new APIResource($response, false, 200);
+
+        } catch (Exception $e) {
+            return new APIResource($e->getMessage(), true, 400);
+        }
+    }
+
+    /**
      * Update applicant status (admission status)
      */
     public function updateApplicantStatus(Request $request)

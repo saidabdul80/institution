@@ -51,10 +51,14 @@ trait FilterMethods{
 
     public function status($search)
     {        
-        return $this->where(function($q) use ($search)
-        {            
-            return $q->whereIn('status',$search);               
-        });
+        if(is_array($search))
+        {
+            return $this->where(function($q) use ($search)
+            {            
+                return $q->whereIn('status',$search);               
+            });
+        }
+        return $this->where('status',$search);               
     }
 
 }

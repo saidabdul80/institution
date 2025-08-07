@@ -158,7 +158,7 @@ class StudentRepository{
      */
     public function getStudentById($studentId)
     {
-        return $this->student->with(['programme', 'level', 'session'])->find($studentId);
+        return $this->student->with(['programme', 'level', 'session', 'olevel'])->find($studentId);
     }
 
     /**

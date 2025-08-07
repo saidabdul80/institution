@@ -96,12 +96,12 @@ class ProgrammeRepository{
     {
         $sql = "SELECT DISTINCT f.id
                     FROM $tablename f LEFT JOIN programme_courses a ON a.$foreignId = f.id LEFT JOIN students s ON s.$foreignId = f.id
-                    LEFT JOIN applicants d ON d.applied_programme_id = f.id WHERE
+                    LEFT JOIN applicants d ON d.applied_programme_curriculum_id = f.id WHERE
                     (CASE WHEN  a.$foreignId IS NULL
                         THEN
                         (CASE WHEN s.$foreignId IS NULL
                             THEN
-                                (CASE WHEN d.applied_programme_id IS NULL
+                                (CASE WHEN d.applied_programme_curriculum_id IS NULL
                                     THEN 0
                                     ELSE 1
                                     END

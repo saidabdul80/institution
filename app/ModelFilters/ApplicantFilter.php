@@ -89,7 +89,7 @@ class ApplicantFilter extends ModelFilter
     {
         return $this->where(function($q) use ($search)
         {
-            return $q->whereIn('applied_programme_id',$search);
+            return $q->whereIn('applied_programme_curriculum_id',$search);
         });
     }
 
@@ -99,5 +99,25 @@ class ApplicantFilter extends ModelFilter
         {
             return $q->whereIn('applied_level_id',$search);
         });
+    }
+
+    public function applicationFeePaid($search)
+    {
+        return $this->where('application_fee_paid', $search);
+    }
+
+    public function acceptanceFeePaid($search)
+    {
+        return $this->where('acceptance_fee_paid', $search);
+    }
+
+    public function verificationStatus($search)
+    {
+        return $this->where('verification_status', $search);
+    }
+
+    public function is_imported($search)
+    {
+        return $this->where('is_imported', $search);
     }
 }

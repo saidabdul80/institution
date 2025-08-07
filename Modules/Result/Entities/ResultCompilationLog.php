@@ -2,14 +2,14 @@
 
 namespace Modules\Result\Entities;
 
+use App\Models\Department;
+use App\Models\Faculty;
+use App\Models\Level;
+use App\Models\ProgrammeCurriculum;
+use App\Models\Session;
+use App\Models\Staff;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Modules\Staff\Entities\Session;
-use Modules\Staff\Entities\Level;
-use Modules\Staff\Entities\Programme;
-use Modules\Staff\Entities\Department;
-use Modules\Staff\Entities\Faculty;
-use Modules\Staff\Entities\Staff;
 
 class ResultCompilationLog extends Model
 {
@@ -22,6 +22,7 @@ class ResultCompilationLog extends Model
         'semester',
         'level_id',
         'programme_id',
+        'programme_curriculum_id',
         'department_id',
         'faculty_id',
         'compilation_type',
@@ -71,7 +72,7 @@ class ResultCompilationLog extends Model
      */
     public function programme()
     {
-        return $this->belongsTo(Programme::class);
+        return $this->belongsTo(ProgrammeCurriculum::class, 'programme_curriculum_id');
     }
 
     /**

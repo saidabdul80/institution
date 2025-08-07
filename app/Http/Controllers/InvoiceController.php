@@ -6,6 +6,7 @@ use App\Http\Resources\APIResource;
 use App\Models\Applicant;
 use App\Services\InvoiceService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class InvoiceController extends Controller
@@ -211,6 +212,7 @@ class InvoiceController extends Controller
         } catch (ValidationException $e) {
             return  new APIResource(array_values($e->errors())[0], true, 400);
         } catch (\Exception $e) {
+            Log::error($e);
             return new APIResource($e->getMessage(), true, 400);
         }
     }   

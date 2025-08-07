@@ -2,6 +2,7 @@
 namespace App\Repositories;
 
 use App\Models\InvoiceType;
+use App\Models\ProgrammeCurriculum;
 use Illuminate\Support\Facades\DB;
 
 class InvoiceTypeRepository
@@ -59,7 +60,7 @@ class InvoiceTypeRepository
         $query = [
             "gender" => $owner?->gender,
             "owner_type" => $owner->user_type,
-            "programme_id" => $owner->programme_id ?? $owner->applied_programme_id,
+            "programme_id" => $owner->programme_id ?? ProgrammeCurriculum::find($owner->applied_programme_curriculum_id)->programme_id,
             "programme_type_id" => $owner->programme_type_id,
             "department_id" => $owner->department_id,
             "faculty_id" => $owner->faculty_id,

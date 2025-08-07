@@ -30,8 +30,9 @@ class CreateApplicantsTable extends Migration
                 $table->bigInteger('state_id')->nullable()->unsigned();                 
                 $table->bigInteger('applied_level_id')->nullable()->unsigned();                 
                 $table->bigInteger('level_id')->nullable()->unsigned();                 
-                $table->bigInteger('applied_programme_id')->unsigned();    
-                $table->bigInteger('programme_id')->unsigned()->nullable();                
+                $table->bigInteger('applied_programme_curriculum_id')->unsigned();    
+                $table->bigInteger('programme_id')->unsigned()->nullable();   
+                $table->bigInteger('programme_curriculum_id')->unsigned()->nullable();   
                 $table->bigInteger('programme_type_id')->unsigned()->nullable();             
                 $table->bigInteger('mode_of_entry_id')->unsigned()->nullable();                 
                 $table->bigInteger('application_status_id')->unsigned()->nullable();                 
@@ -87,7 +88,7 @@ class CreateApplicantsTable extends Migration
                 $table->foreign('state_id')->references('id')->on('states')->cascadeOnUpdate()->cascadeOnDelete();
                 $table->foreign('applied_level_id')->references('id')->on('levels')->cascadeOnUpdate()->cascadeOnDelete();
                 $table->foreign('level_id')->references('id')->on('levels')->cascadeOnUpdate()->cascadeOnDelete();
-                $table->foreign('applied_programme_id')->references('id')->on('programmes')->cascadeOnUpdate()->cascadeOnDelete();
+                $table->foreign('applied_programme_curriculum_id')->references('id')->on('programmes')->cascadeOnUpdate()->cascadeOnDelete();
                 $table->foreign('programme_id')->references('id')->on('programmes')->cascadeOnUpdate()->cascadeOnDelete();
                 $table->foreign('programme_type_id')->references('id')->on('programme_types')->cascadeOnUpdate()->cascadeOnDelete();
                 $table->foreign('mode_of_entry_id')->references('id')->on('entry_modes')->cascadeOnUpdate()->cascadeOnDelete();

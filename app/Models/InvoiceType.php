@@ -28,7 +28,7 @@ class InvoiceType extends Model
 
     public function getProgrammeNameAttribute()
     {
-        $programme = Programme::find($this->applied_programme_id);
+        $programme = Programme::find($this->applied_programme_curriculum_id);
         if (!is_null($programme)) {
             return "{$programme->name}";
         } else {

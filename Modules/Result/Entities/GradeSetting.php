@@ -17,6 +17,7 @@ class GradeSetting extends Model
     protected $fillable = [
         'programme_id', // nullable - null for general settings, specific ID for programme-specific
         'min_score',
+        'programme_curriculum_id',
         'max_score',
         'grade',
         'grade_point',
@@ -116,7 +117,7 @@ class GradeSetting extends Model
      */
     public function isGeneralSetting()
     {
-        return is_null($this->programme_id);
+        return is_null($this->programme_curriculum_id);
     }
 
     /**
@@ -124,15 +125,15 @@ class GradeSetting extends Model
      */
     public function isProgrammeSpecific()
     {
-        return !is_null($this->programme_id);
+        return !is_null($this->programme_curriculum_id);
     }
 
     /**
-     * Scope to get general grade settings (programme_id is null)
+     * Scope to get general grade settings (programme_curriculum_id is null)
      */
     public function scopeGeneral($query)
     {
-        return $query->whereNull('programme_id');
+        return $query->whereNull('programme_curriculum_id');
     }
 
     /**
@@ -140,7 +141,7 @@ class GradeSetting extends Model
      */
     public function scopeProgrammeSpecific($query)
     {
-        return $query->whereNotNull('programme_id');
+        return $query->whereNotNull('programme_curriculum_id');
     }
 
     /**
@@ -148,7 +149,7 @@ class GradeSetting extends Model
      */
     public function scopeForProgramme($query, $programmeId)
     {
-        return $query->where('programme_id', $programmeId);
+        return $query->where('programme_curriculum_id', $programmeId);
     }
 
     /**
@@ -192,7 +193,7 @@ class GradeSetting extends Model
         if ($programmeId) {
             $programmeGrade = static::where('min_score', '<=', $score)
                 ->where('max_score', '>=', $score)
-                ->where('programme_id', $programmeId)
+                ->where('programme_curriculum_id', $programmeId)
                 ->first();
 
             if ($programmeGrade) {
@@ -203,7 +204,7 @@ class GradeSetting extends Model
         // Fallback to general grade settings
         return static::where('min_score', '<=', $score)
             ->where('max_score', '>=', $score)
-            ->whereNull('programme_id')
+            ->whereNull('programme_curriculum_id')
             ->first();
     }
 

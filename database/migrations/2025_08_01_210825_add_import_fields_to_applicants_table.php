@@ -25,6 +25,8 @@ return new class extends Migration
             // Add payment status tracking
             $table->boolean('application_fee_paid')->default(false)->after('imported_at');
             $table->timestamp('application_fee_paid_at')->nullable()->after('application_fee_paid');
+            $table->boolean('acceptance_fee_paid')->default(false)->after('application_fee_paid_at');
+            $table->timestamp('acceptance_fee_paid_at')->nullable()->after('acceptance_fee_paid');
         });
     }
 

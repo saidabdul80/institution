@@ -43,7 +43,7 @@ class ApplicantsController extends Controller
                 'first_name' => 'required',
                 'surname' => 'required',                                
                 'password' => 'required|confirmed',                                         
-                'applied_programme_id' => 'required',                
+                'applied_programme_curriculum_id' => 'required',                
                 'mode_of_entry_id' => 'nullable',                                                                
             ]);
             
@@ -323,7 +323,7 @@ class ApplicantsController extends Controller
      
           $validated = $request->validate([
                     'file' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:5120', // 5MB max
-                    'name' => 'required|string|max:255',
+                    'document_type' => 'required|string',
                     // Add other validation rules as needed
                 ]);
 
@@ -412,7 +412,342 @@ class ApplicantsController extends Controller
         }catch(Exception $e){
             return new APIResource($e->getMessage(), true, 400 );
         }
+    }
 
+    /**
+     * Final submission of application
+     */
+    public function finalSubmit(Request $request)
+    {
+        try {
+            $applicant = auth('api-applicants')->user();
+            // Check if already final submitted
+            if ($applicant->is_final_submitted) {
+                return new APIResource('Application has already been final submitted', true, 400);
+            }
+
+            $request->validate([
+                'notes' => 'nullable|string|max:500'
+            ]);
+
+            // Perform final submission
+            $applicant->finalSubmit($request->get('notes'));
+
+            // Generate acknowledgment slip
+            $documentService = new \App\Services\DocumentGenerationService();
+            $acknowledgmentSlip = $documentService->generateAcknowledgmentSlip($applicant);
+
+            return new APIResource([
+                'message' => 'Application has been final submitted successfully',
+                'final_submitted_at' => $applicant->final_submitted_at,
+                'is_final_submitted' => $applicant->is_final_submitted,
+                'acknowledgment_slip' => $acknowledgmentSlip
+            ], false, 200);
+
+        } catch (Exception $e) {
+            Log::error('Error in final submission: ' . $e->getMessage());
+            return new APIResource($e->getMessage(), true, 400);
+        }
+    }
+
+    /**
+     * Download acknowledgment slip
+     */
+    public function downloadAcknowledgmentSlip(Request $request)
+    {
+        try {
+            $applicant = auth('api-applicants')->user();
+
+            if (!$applicant->is_final_submitted) {
+                return new APIResource('Application has not been final submitted yet', true, 403);
+            }
+
+            // Generate acknowledgment slip
+            $documentService = new \App\Services\DocumentGenerationService();
+            $acknowledgmentSlip = $documentService->generateAcknowledgmentSlip($applicant);
+
+            if (!$acknowledgmentSlip) {
+                return new APIResource('Unable to generate acknowledgment slip', true, 500);
+            }
+
+            return new APIResource($acknowledgmentSlip, false, 200);
+
+        } catch (Exception $e) {
+            return new APIResource($e->getMessage(), true, 400);
+        }
+    }
+
+    /**
+     * Download verification slip (after acceptance fee payment)
+     */
+    public function downloadVerificationSlip(Request $request)
+    {
+        try {
+            $applicant = auth('api-applicants')->user();
+
+            // Check if applicant is admitted
+            if ($applicant->admission_status !== 'admitted') {
+                return new APIResource('You have not been admitted yet', true, 403);
+            }
+
+            // Check if acceptance fee has been paid
+            if (!$this->hasAcceptanceFeePaid($applicant)) {
+                return new APIResource('Acceptance fee has not been paid yet', true, 403);
+            }
+
+            // Generate verification slip
+            $documentService = new \App\Services\DocumentGenerationService();
+
+            // Get payment data for the template
+            $acceptanceFeePayment = $this->getAcceptanceFeePayment($applicant);
+            $paymentData = null;
+
+            if ($acceptanceFeePayment) {
+                $paymentData = [
+                    'payment_date' => $acceptanceFeePayment->paid_at ? $acceptanceFeePayment->paid_at->format('F j, Y') : now()->format('F j, Y'),
+                    'payment_reference' => $acceptanceFeePayment->payment_reference,
+                    'amount' => number_format($acceptanceFeePayment->amount, 2)
+                ];
+            }
+
+            $verificationSlip = $documentService->generateVerificationSlip($applicant, $paymentData);
+
+            if (!$verificationSlip) {
+                return new APIResource('Unable to generate verification slip', true, 500);
+            }
+
+            return new APIResource($verificationSlip, false, 200);
+
+        } catch (Exception $e) {
+            return new APIResource($e->getMessage(), true, 400);
+        }
+    }
+
+    /**
+     * Check if applicant has paid acceptance fee
+     */
+    private function hasAcceptanceFeePaid($applicant): bool
+    {
+        return $applicant->invoices()
+            ->whereHas('invoiceType.paymentCategory', function($query) {
+                $query->where('short_name', 'acceptance_fee');
+            })
+            ->where('status', 'paid')
+            ->exists();
+    }
+
+    /**
+     * Get acceptance fee payment details
+     */
+    private function getAcceptanceFeePayment($applicant)
+    {
+        $acceptanceFeeInvoice = $applicant->invoices()
+            ->whereHas('invoiceType.paymentCategory', function($query) {
+                $query->where('short_name', 'acceptance_fee');
+            })
+            ->where('status', 'paid')
+            ->first();
+
+        if ($acceptanceFeeInvoice) {
+            return $acceptanceFeeInvoice->payments()
+                ->where('status', 'successful')
+                ->latest()
+                ->first();
+        }
+
+        return null;
+    }
+
+    /**
+     * Get admission letter for admitted applicant
+     */
+    public function getAdmissionLetter(Request $request)
+    {
+        try {
+            $applicant = auth('api-applicants')->user();
+
+            // Check if applicant is admitted and published
+            if ($applicant->admission_status !== 'admitted') {
+                return new APIResource('You have not been admitted yet', true, 403);
+            }
+
+            if (!$applicant->isPublished()) {
+                return new APIResource('Your admission has not been published yet', true, 403);
+            }
+
+            // Check if acceptance fee has been paid
+            $acceptanceFeePaid = $applicant->invoices()
+                ->whereHas('invoiceType.paymentCategory', function($q) {
+                    $q->where('short_name', 'acceptance_fee');
+                })
+                ->where('status', 'paid')
+                ->exists();
+
+            if (!$acceptanceFeePaid) {
+                return new APIResource('Acceptance fee must be paid before accessing admission letter', true, 403);
+            }
+
+            // Check if documents have been verified
+            if ($applicant->verification_status !== 'verified') {
+                return new APIResource('Your documents are still under verification. Please wait for verification to complete.', true, 403);
+            }
+
+            // Check if admission letter has been officially issued
+            if (!$applicant->admission_letter_issued) {
+                return new APIResource('Your admission letter has not been issued yet. Please wait for the admissions office to complete the process.', true, 403);
+            }
+
+            // Get admission letter template from configuration
+            $template = \App\Services\Util::getConfigValue('admission_letter_template');
+
+            if (empty($template)) {
+                return new APIResource('Admission letter template not configured', true, 500);
+            }
+
+            // Prepare template data
+            $templateData = $this->prepareAdmissionLetterData($applicant);
+
+            // Replace placeholders in template
+            $admissionLetter = $this->replacePlaceholders($template, $templateData);
+
+            return new APIResource([
+                'admission_letter_html' => $admissionLetter,
+                'applicant_name' => $applicant->first_name . ' ' . $applicant->surname,
+                'application_number' => $applicant->application_number,
+                'programme_name' => $applicant->programme->name ?? 'N/A',
+                'admission_date' => $applicant->published_at ? $applicant->published_at->format('F j, Y') : 'N/A'
+            ], false, 200);
+
+        } catch (Exception $e) {
+            Log::error('Error getting admission letter: ' . $e->getMessage());
+            return new APIResource($e->getMessage(), true, 500);
+        }
+    }
+
+    /**
+     * Download admission letter as PDF
+     */
+    public function downloadAdmissionLetter(Request $request)
+    {
+        try {
+            $applicant = auth('api-applicants')->user();
+
+            // Check if applicant is admitted and published
+            if ($applicant->admission_status !== 'admitted') {
+                return new APIResource('You have not been admitted yet', true, 403);
+            }
+
+            if (!$applicant->isPublished()) {
+                return new APIResource('Your admission has not been published yet', true, 403);
+            }
+
+            // Check if acceptance fee has been paid
+            $acceptanceFeePaid = $applicant->invoices()
+                ->whereHas('invoiceType.paymentCategory', function($q) {
+                    $q->where('short_name', 'acceptance_fee');
+                })
+                ->where('status', 'paid')
+                ->exists();
+
+            if (!$acceptanceFeePaid) {
+                return new APIResource('Acceptance fee must be paid before accessing admission letter', true, 403);
+            }
+
+            // Check if documents have been verified
+            if ($applicant->verification_status !== 'verified') {
+                return new APIResource('Your documents are still under verification. Please wait for verification to complete.', true, 403);
+            }
+
+            // Check if admission letter has been officially issued
+            if (!$applicant->admission_letter_issued) {
+                return new APIResource('Your admission letter has not been issued yet. Please wait for the admissions office to complete the process.', true, 403);
+            }
+
+            // Get admission letter template
+            $template = \App\Services\Util::getConfigValue('admission_letter_template');
+
+            if (empty($template)) {
+                return new APIResource('Admission letter template not configured', true, 500);
+            }
+
+            // Prepare template data
+            $templateData = $this->prepareAdmissionLetterData($applicant);
+
+            // Replace placeholders in template
+            $admissionLetter = $this->replacePlaceholders($template, $templateData);
+
+            // Generate PDF using DomPDF
+            $pdf = \PDF::loadHTML($admissionLetter);
+            $pdf->setPaper('A4', 'portrait');
+
+            $filename = 'admission_letter_' . $applicant->application_number . '.pdf';
+
+            return $pdf->download($filename);
+
+        } catch (Exception $e) {
+            Log::error('Error downloading admission letter: ' . $e->getMessage());
+            return new APIResource($e->getMessage(), true, 500);
+        }
+    }
+
+    /**
+     * Prepare data for admission letter template
+     */
+    private function prepareAdmissionLetterData($applicant)
+    {
+        return [
+            // School information
+            'school_name' => \App\Services\Util::getConfigValue('school_name') ?? 'Institution Name',
+            'school_address' => \App\Services\Util::getConfigValue('school_address') ?? '',
+            'school_city' => \App\Services\Util::getConfigValue('school_city') ?? '',
+            'school_state' => \App\Services\Util::getConfigValue('school_state') ?? '',
+            'school_email' => \App\Services\Util::getConfigValue('school_email') ?? '',
+            'school_phone' => \App\Services\Util::getConfigValue('school_phone') ?? '',
+            'school_logo' => \App\Services\Util::getConfigValue('school_logo') ?? '',
+
+            // Applicant information
+            'applicant_title' => $applicant->title ?? 'Mr/Ms',
+            'applicant_first_name' => $applicant->first_name,
+            'applicant_middle_name' => $applicant->middle_name ?? '',
+            'applicant_surname' => $applicant->surname,
+            'applicant_address' => $applicant->address ?? '',
+            'applicant_city' => $applicant->lga->name ?? '',
+            'applicant_state' => $applicant->state->name ?? '',
+            'application_number' => $applicant->application_number,
+
+            // Academic information
+            'programme_name' => $applicant->programme->name ?? 'N/A',
+            'level_name' => $applicant->level->title ?? 'N/A',
+            'faculty_name' => $applicant->programme->faculty->name ?? 'N/A',
+            'department_name' => $applicant->programme->department->name ?? 'N/A',
+            'mode_of_study' => $applicant->modeOfEntry->name ?? 'Full Time',
+            'admission_batch' => $applicant->batch->name ?? 'N/A',
+            'academic_session' => $applicant->session->name ?? 'N/A',
+
+            // Dates
+            'current_date' => now()->format('F j, Y'),
+            'admission_date' => $applicant->published_at ? $applicant->published_at->format('F j, Y') : 'N/A',
+        ];
+    }
+
+   /**
+     * Replace placeholders in template with actual data
+     */
+    private function replacePlaceholders($template, $data)
+    {
+        // Replace simple placeholders like {{name}}, {{email}}, etc.
+        foreach ($data as $key => $value) {
+            $template = str_replace('{{' . $key . '}}', $value, $template);
+        }
+
+        // Handle conditional blocks like {{#if someKey}}...{{/if}}
+        $template = preg_replace_callback('/\{\{#if\s+(\w+)\}\}(.*?)\{\{\/if\}\}/s', function($matches) use ($data) {
+            $condition = $matches[1];
+            $content = $matches[2];
+            return !empty($data[$condition]) ? $content : '';
+        }, $template);
+
+        return $template;
     }
 
 }

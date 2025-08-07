@@ -84,10 +84,10 @@ class Utilities {
         $entry_mode = DB::table('entry_modes')->where('id', $user['mode_of_entry_id'])->first()?->code;
         $level = DB::table('levels')->where('id',$user['level_id'] ?? $user['applied_level_id'] ?? 1)->first()?->order;
         $programme_type = DB::table('programme_types')->find($user['programme_type_id'])?->short_name;
-        // if(array_key_exists('applied_programme_id', $user)){
-        //     $user['programme_id'] = $user['applied_programme_id'];
+        // if(array_key_exists('applied_programme_curriculum_id', $user)){
+        //     $user['programme_id'] = $user['applied_programme_curriculum_id'];
       
-        $programme_id = $user['programme_id'] ?? $user['applied_programme_id'];  
+        $programme_id = $user['programme_id'] ?? $user['applied_programme_curriculum_id'];  
         $programme = DB::table('programmes')->where('id',$programme_id)->first()->code;        
         try{
 

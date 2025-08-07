@@ -10,6 +10,7 @@ use App\Repositories\InvoiceTypeRepository;
 use App\Repositories\PaymentRepository;
 use Milon\Barcode\Facades\DNS2DFacade as DNS2D;
 use App\Repositories\StudentRepository;
+use Illuminate\Support\Facades\Log;
 
 class InvoiceService
 {
@@ -72,13 +73,13 @@ class InvoiceService
             $acceptance_fee_is_enabled = ConfigurationRepository::check('enable_acceptance_fee', 'true');
 
             if ($acceptance_fee_is_enabled) {
-                $application_fee = array_filter($userPaymentDetails, function ($item) {
+                $application_fee =array_values(array_filter($userPaymentDetails, function ($item) {
                     return $item['payment_category']['short_name'] === 'application_fee';
-                });
+                }));
 
-                $acceptance_fee = array_filter($userPaymentDetails, function ($item) {
+                $acceptance_fee = array_values(array_filter($userPaymentDetails, function ($item) {
                     return $item['payment_category']['short_name'] === 'acceptance_fee';
-                });
+                }));
 
                 $registration_fee = array_filter($userPaymentDetails, function ($item) {
                     return $item['payment_category']['short_name'] === 'registration_fee';

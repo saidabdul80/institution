@@ -2,14 +2,14 @@
 
 namespace Modules\Result\Entities;
 
+use App\Models\Course;
+use App\Models\Level;
+use App\Models\Programme;
+use App\Models\Session;
+use App\Models\Staff;
+use App\Models\StudentCourseRegistration;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Modules\Staff\Entities\Staff;
-use Modules\Staff\Entities\Course;
-use Modules\Staff\Entities\Session;
-use Modules\Staff\Entities\Programme;
-use Modules\Staff\Entities\Level;
-
 class StaffCourseAllocation extends Model
 {
     use HasFactory;
@@ -22,6 +22,7 @@ class StaffCourseAllocation extends Model
         'session_id',
         'semester',
         'programme_id',
+        'programme_curriculum_id',
         'level_id',
         'allocation_type',
         'remarks',

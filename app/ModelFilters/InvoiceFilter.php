@@ -20,14 +20,14 @@ class InvoiceFilter extends ModelFilter
     {
         $filters = $this->input();        
         $ownerType = isset($filters['owner_type']) ? $filters['owner_type'] : 'applicant';
-        $programme_ids = $search;
+        $programme_curriculum_ids = $search;
         return $this->query->where('owner_type', $ownerType)
-            ->whereIn('owner_id', function ($query) use ($ownerType, $programme_ids) {
+            ->whereIn('owner_id', function ($query) use ($ownerType, $programme_curriculum_ids) {
                 $query->select('id')
-                    ->from(function ($query) use ($ownerType, $programme_ids) {
-                        $query->select('id', 'programme_id')
+                    ->from(function ($query) use ($ownerType, $programme_curriculum_ids) {
+                        $query->select('id', 'programme_curriculum_id')
                             ->from($ownerType . 's')
-                            ->whereIn('programme_id', $programme_ids);
+                            ->whereIn('programme_curriculum_id', $programme_curriculum_ids);
                     });
             });
     }

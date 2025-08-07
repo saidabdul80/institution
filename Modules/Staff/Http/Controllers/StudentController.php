@@ -86,8 +86,8 @@ class StudentController extends Controller
                 'session_id' => 'required'
             ]);
 
-            $response = $this->studentService->createStudent($request);
-            return new APIResource($response, false, 200);
+            // $response = $this->studentService->createStudent($request);
+            // return new APIResource($response, false, 200);
 
         } catch (ValidationException $e) {
             return new APIResource(array_values($e->errors())[0], true, 400);

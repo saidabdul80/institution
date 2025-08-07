@@ -284,7 +284,7 @@ class StaffRepositories{
             "application_id",
             "entry_session_id",
             "applied_level_id",
-            "applied_programme_id",
+            "applied_programme_curriculum_id",
             "programme_type_id",
             "programme_id",
             "level_id",

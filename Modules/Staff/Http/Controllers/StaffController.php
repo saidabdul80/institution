@@ -52,8 +52,9 @@ class StaffController extends Controller
 
             //query the database to check username
             $staff = $this->staffService->attempt($request);
-
+            
             //compare input password with hashed password from database and return error not matching
+
             if (!$staff || !Hash::check($request->password, $staff->password)) {
                 throw new \Exception("Incorrect credentials", 404);
             }
@@ -62,7 +63,6 @@ class StaffController extends Controller
             $staff->save();
             //generate access token for logged in user
             $accessToken = $staff->createToken("AuthToken")->accessToken;
-
             //response structure
             return new APIResource(["staff" => $staff,"accessToken" => $accessToken ], false, 200);
 

@@ -9,7 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 class Configuration extends Model
 {
     use HasFactory;
-    protected $hidden = ['seeds']; 
+
+    protected $fillable = ['name', 'value', 'description', 'model', 'seeds'];
+    protected $hidden = ['seeds'];
     protected $casts = [
         "value" => RemoveWhiteSpace::class
     ];

@@ -19,6 +19,7 @@ class CreateStudentCoursesGradesTable extends Migration
             $table->bigInteger('programme_type_id');
             $table->bigInteger('faculty_id')->unsigned();
             $table->bigInteger('department_id')->unsigned();
+            $table->bigInteger('programme_curriculum_id')->unsigned();
             $table->bigInteger('programme_id')->unsigned();
             $table->bigInteger('session_id')->unsigned()->index('session_id');
             $table->bigInteger('entry_mode_id')->unsigned();

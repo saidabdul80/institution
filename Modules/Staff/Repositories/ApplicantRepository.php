@@ -33,11 +33,15 @@ class ApplicantRepository{
      */
     public function getAllApplicants($filters = [])
     {
-        $query = $this->applicant->with('olevel')->query();
+        $query = $this->applicant->filter($filters)->with('olevel')->query();
 
         // Apply filters
         if (isset($filters['programme_id']) && $filters['programme_id']) {
             $query->where('programme_id', $filters['programme_id']);
+        }
+
+        if (isset($filters['programme_curriculum_id']) && $filters['programme_curriculum_id']) {
+            $query->where('programme_curriculum_id', $filters['programme_curriculum_id']);
         }
 
         if (isset($filters['session_id']) && $filters['session_id']) {
@@ -87,6 +91,21 @@ class ApplicantRepository{
             'pending' => $pending,
             'not_admitted' => $notAdmitted
         ];
+    }
+
+    /**
+     * Get individual applicant by ID
+     */
+    public function getApplicantById($id)
+    {
+        $applicant = $this->applicant->with(['olevel', 'alevel', 'qualifications.qualification'])
+                                    ->find($id);
+
+        if (!$applicant) {
+            throw new \Exception('Applicant not found', 404);
+        }
+
+        return $applicant;
     }
 
     /**

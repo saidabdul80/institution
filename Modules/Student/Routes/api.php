@@ -28,6 +28,16 @@ Route::prefix('studentportal')->group(function() {
 
         Route::post('/logout', [StudentController::class, 'logout']);
 
+        // New student portal endpoints
+        Route::get('/student/check_registration_payment', [StudentController::class, 'checkRegistrationPayment']);
+        Route::get('/student/current_session', [StudentController::class, 'getCurrentSession']);
+        Route::get('/student/sessions', [StudentController::class, 'getAllSessions']);
+
+        // Course registration endpoints
+        Route::get('/student/courses', [StudentController::class, 'getStudentCourses']);
+        Route::get('/student/registered_courses', [StudentController::class, 'getRegisteredCourses']);
+        Route::post('/student/register_courses', [StudentController::class, 'registerCourses']);
+
         Route::group(["prefix"=>"student"], function () {
             Route::post('/students', [StudentController::class, 'getStudents']);
             Route::post('/update', [StudentController::class, 'updateStudent']);

@@ -44,7 +44,11 @@ public function __construct(Applicant $applicant, $schoolName, $schoolLogo, Prog
                 return;
             }
 
-            $subject = "Congratulations! Admission Offer from {$this->schoolName}";
+            $subject = "Congratulations! Admission Notification from {$this->schoolName}";
+
+            // Generate admission notification using the new template
+            $documentService = new \App\Services\DocumentGenerationService();
+            $admissionNotification = $documentService->generateAdmissionNotification($this->applicant);
 
             $data = [
                 'applicant' => $this->applicant,
@@ -52,10 +56,12 @@ public function __construct(Applicant $applicant, $schoolName, $schoolLogo, Prog
                 'schoolLogo' => $this->schoolLogo,
                 'programme' => $this->programme,
                 'level' => $this->level,
-                'currentDate' => now()->format('F j, Y')
+                'currentDate' => now()->format('F j, Y'),
+                'admissionNotificationHtml' => $admissionNotification['html'] ?? null
             ];
 
-            Mail::send('emails.admission_offer', $data, function($message) use ($to, $subject) {
+            // Use the new admission notification email template
+            Mail::send('emails.admission_notification', $data, function($message) use ($to, $subject) {
                 $message->to($to)
                         ->subject($subject)
                         ->from('admissions@' . strtolower(str_replace(' ', '', $this->schoolName)) . '.edu.ng',

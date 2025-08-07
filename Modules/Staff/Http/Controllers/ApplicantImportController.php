@@ -18,6 +18,7 @@ use App\Models\Applicant;
 use App\Models\Programme;
 use App\Models\EntryMode;
 use App\Models\LGA;
+use App\Models\ProgrammeCurriculum;
 use App\Models\Session;
 use Illuminate\Support\Facades\Log;
 
@@ -151,14 +152,21 @@ class ApplicantImportController extends Controller
             $errors[] = "Row {$rowNumber}: Programme name is required";
         } else {
             $programme = Programme::where('name', 'LIKE', '%' . $rowData['programme_name'] . '%')->first();
+            
             if (!$programme) {
                 $errors[] = "Row {$rowNumber}: Programme '{$rowData['programme_name']}' not found";
             } else {
-                $data['applied_programme_id'] = $programme->id;
-                $data['programme_id'] = $programme->id;
-                $data['department_id'] = $programme->department_id;
-                $data['faculty_id'] = $programme->faculty_id;
-                $data['programme_type_id'] = $programme->programme_type_id;
+                $programmeCurriculum = ProgrammeCurriculum::active()->where('programme_id', $programme->id)->first();
+                if(!$programmeCurriculum){
+                $errors[] = "Row {$rowNumber}: Programme '{$rowData['programme_name']}' has no active curriculum";
+                }else{
+                    $data['applied_programme_curriculum_id'] = $programme->id;
+                    $data['programme_id'] = $programme->id;
+                    $data['programme_curriculum_id'] = $programmeCurriculum->id;
+                    $data['department_id'] = $programme->department_id;
+                    $data['faculty_id'] = $programme->faculty_id;
+                    $data['programme_type_id'] = $programme->programme_type_id;
+                }
             }
         }
 
@@ -348,7 +356,7 @@ class ApplicantImportController extends Controller
                     // Validate required fields including foreign keys
                     $requiredFields = [
                         'first_name', 'surname', 'jamb_number', 'session_id',
-                        'applied_programme_id', 'programme_id', 'mode_of_entry_id'
+                        'applied_programme_curriculum_id', 'programme_id', 'mode_of_entry_id'
                     ];
                     
                     foreach ($requiredFields as $field) {

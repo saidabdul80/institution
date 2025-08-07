@@ -44,8 +44,7 @@ class UpdateConfigurations extends Command
         }
 
         
-        $this->info('Permission update completed successfully!');
-        DB::statement("INSERT INTO `model_has_roles` (`role_id`, `model_type`, `model_id`) VALUES ('1', 'App\\Models\\Staff', '1');");
+        $this->info('Configurations and roles updated successfully!');
     }
 
     /**
@@ -53,7 +52,7 @@ class UpdateConfigurations extends Command
      */
     private function freshUpdate()
     {
-        $this->info('Removing all existing configurations and roles...');
+        $this->info('Removing all existing configurations...');
 
         // Clear all configurations and roles
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');

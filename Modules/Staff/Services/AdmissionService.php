@@ -79,7 +79,7 @@ class AdmissionService extends Utilities{
             $state = $searchObj['state_id']??"";
             $country = $searchObj['country_id']??"";
             $department_id = $searchObj['department_id']??"";
-            $applied_programme_id = $searchObj['applied_programme_id']??"";
+            $applied_programme_curriculum_id = $searchObj['applied_programme_curriculum_id']??"";
             $mode_of_entry_id = $searchObj['mode_of_entry_id']??"";
             $health_status = $searchObj['health_status']??"";
             $payment_open = $searchObj['payment_open']??"";
@@ -90,7 +90,7 @@ class AdmissionService extends Utilities{
                 "applicants.state_id"=>$state,
                 "applicants.country_id"=>$country,
                 "applicants.department_id"=>$department_id,
-                "applicants.applied_programme_id"=>$applied_programme_id,
+                "applicants.applied_programme_curriculum_id"=>$applied_programme_curriculum_id,
                 "applicants.mode_of_entry_id"=>$mode_of_entry_id,
                 "applicants.health_status"=>$health_status,
                 "applicants.payment_open"=>$payment_open,
@@ -134,7 +134,7 @@ class AdmissionService extends Utilities{
     }
 
     public function changeAdmittedProgramme($request){    
-        return $this->admissionRepository->changeAdmittedProgramme($request->get('applicant_id'), $request->get('programme_id'), $request->get('department_id'),$request->get('faculty_id'), $request->get('programme_type_id'), $request->get('level_id'));
+        return $this->admissionRepository->changeAdmittedProgramme($request->get('applicant_id'), $request->get('programme_id'), $request->get('programme_curriculum_id'), $request->get('department_id'),$request->get('faculty_id'), $request->get('programme_type_id'), $request->get('level_id'));
     }
 
     public function getBatches($session_id){

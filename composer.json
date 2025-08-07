@@ -7,6 +7,7 @@
     "require": {
         "php": "^8.0.2",
         "andreaselia/laravel-api-to-postman": "^1.15",
+        "barryvdh/laravel-dompdf": "^3.1",
         "doctrine/dbal": "^4.3",
         "flutterwavedev/flutterwave-v3": "^1.0",
         "guzzlehttp/guzzle": "^7.2",

@@ -20,6 +20,7 @@ class CreateResultSubmissionWindowsTable extends Migration
             $table->bigInteger('faculty_id')->unsigned()->nullable();
             $table->bigInteger('department_id')->unsigned()->nullable();
             $table->bigInteger('programme_id')->unsigned()->nullable();
+            $table->bigInteger('programme_curriculum_id')->unsigned();  
             $table->bigInteger('level_id')->unsigned()->nullable();
             
             // Window Details

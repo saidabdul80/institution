@@ -2,13 +2,13 @@
 
 namespace Modules\Result\Entities;
 
+use App\Models\Level;
+use App\Models\ProgrammeCurriculum;
+use App\Models\Session;
+use App\Models\Staff;
+use App\Models\Student;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Modules\Student\Entities\Student;
-use Modules\Staff\Entities\Session;
-use Modules\Staff\Entities\Level;
-use Modules\Staff\Entities\Programme;
-use Modules\Staff\Entities\Staff;
 
 class StudentSemesterGpa extends Model
 {
@@ -22,6 +22,7 @@ class StudentSemesterGpa extends Model
         'semester',
         'level_id',
         'programme_id',
+        'programme_curriculum_id',
         'registered_credit_units',
         'earned_credit_units',
         'total_credit_points',
@@ -83,7 +84,7 @@ class StudentSemesterGpa extends Model
      */
     public function programme()
     {
-        return $this->belongsTo(Programme::class);
+        return $this->belongsTo(ProgrammeCurriculum::class, 'programme_curriculum_id');
     }
 
     /**
@@ -206,7 +207,7 @@ class StudentSemesterGpa extends Model
      */
     public function scopeForProgramme($query, $programmeId)
     {
-        return $query->where('programme_id', $programmeId);
+        return $query->where('programme_curriculum_id', $programmeId);
     }
 
     /**

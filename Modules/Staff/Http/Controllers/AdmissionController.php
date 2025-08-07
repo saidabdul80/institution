@@ -16,7 +16,8 @@ use Modules\Staff\Services\Utilities;
 use Modules\Staff\Transformers\UtilResource;
 use App\Models\Applicant;
 use App\Jobs\SendAdmissionEmail;
-
+use App\Models\Level;
+use App\Services\Util;
 
 class AdmissionController extends Controller
 {
@@ -44,6 +45,7 @@ class AdmissionController extends Controller
                 "admission_options.change_level" => "nullable|boolean",
                 "admission_options.just_admit" => "nullable|boolean",
                 "admission_options.new_programme_id" => "nullable|integer|exists:programmes,id",
+                "admission_options.new_programmed_curriculum_id" => "nullable|integer|exists:programmed_curriculums,id",
                 "admission_options.new_level_id" => "nullable|integer|exists:levels,id",
             ]);
 
@@ -394,9 +396,9 @@ class AdmissionController extends Controller
             }
 
             $publishedCount = 0;
-            $schoolName = config('app.name', 'Institution');
-            $schoolLogo = config('app.logo', '');
-
+            $schoolName = Util::getConfigValue('school_name');
+            $schoolLogo = Util::getConfigValue('school_logo');
+            $level = Level::find(1);    
             foreach ($applicants as $applicant) {
                 $applicant->publish($publishedBy, $notes);
                 $publishedCount++;
@@ -408,7 +410,7 @@ class AdmissionController extends Controller
                         $schoolName,
                         $schoolLogo,
                         $applicant->programme,
-                        $applicant->level
+                        $applicant->level ?? $level
                     )->onQueue('default');
                 }
             }
@@ -539,9 +541,9 @@ class AdmissionController extends Controller
             }
 
             $publishedCount = 0;
-            $schoolName = config('app.name', 'Institution');
-            $schoolLogo = config('app.logo', '');
-
+            $schoolName = Util::getConfigValue('school_name');
+            $schoolLogo = Util::getConfigValue('school_logo');
+            $level = Level::find(1);    
             foreach ($applicants as $applicant) {
                 $applicant->publish($publishedBy, $notes);
                 $publishedCount++;
@@ -553,7 +555,7 @@ class AdmissionController extends Controller
                         $schoolName,
                         $schoolLogo,
                         $applicant->programme,
-                        $applicant->level
+                        $applicant->level ?? $level
                     )->onQueue('default');
                 }
             }
@@ -680,9 +682,9 @@ class AdmissionController extends Controller
             ->get();
 
         $publishedCount = 0;
-        $schoolName = config('app.name', 'Institution');
-        $schoolLogo = config('app.logo', '');
-
+         $schoolName = Util::getConfigValue('school_name');
+        $schoolLogo = Util::getConfigValue('school_logo');
+        $level = Level::find(1);      
         foreach ($applicants as $applicant) {
             $applicant->publish($publishedBy, $notes);
             $publishedCount++;
@@ -693,7 +695,7 @@ class AdmissionController extends Controller
                     $schoolName,
                     $schoolLogo,
                     $applicant->programme,
-                    $applicant->level
+                    $applicant->level?? $level
                 )->onQueue('default');
             }
         }
@@ -739,9 +741,9 @@ class AdmissionController extends Controller
             ->get();
 
         $emailsQueued = 0;
-        $schoolName = config('app.name', 'Institution');
-        $schoolLogo = config('app.logo', '');
-
+            $schoolName = Util::getConfigValue('school_name');
+            $schoolLogo = Util::getConfigValue('school_logo');
+            $level = Level::find(1);    
         foreach ($applicants as $applicant) {
             if ($applicant->email) {
                 SendAdmissionEmail::dispatch(
@@ -749,7 +751,7 @@ class AdmissionController extends Controller
                     $schoolName,
                     $schoolLogo,
                     $applicant->programme,
-                    $applicant->level
+                    $applicant->level || $level
                 )->onQueue('default');
                 $emailsQueued++;
             }
@@ -759,6 +761,401 @@ class AdmissionController extends Controller
             'message' => "Successfully queued {$emailsQueued} admission email(s)",
             'emails_queued' => $emailsQueued
         ];
+    }
+
+    /**
+     * Get applicants for document verification
+     */
+    public function getDocumentVerificationApplicants(Request $request)
+    {
+        try {
+            $request->validate([
+                'page' => 'integer|min:1',
+                'per_page' => 'integer|min:1|max:100',
+                'search' => 'nullable|string|max:255',
+                'programme_id' => 'nullable|exists:programmes,id',
+                'verification_status' => 'nullable|in:pending,under_review,verified,rejected',
+                'session_id' => 'nullable|exists:sessions,id'
+            ]);
+
+            $perPage = $request->get('per_page', 20);
+            $search = $request->get('search');
+            $programmeId = $request->get('programme_id');
+            $verificationStatus = $request->get('verification_status');
+            $sessionId = $request->get('session_id', session('current_session_id'));
+            $filter = $request->all();
+            $filter['session_id'] = $sessionId;
+            $filter['acceptance_fee_paid'] = true;
+            $query = Applicant::filter($filter)->with(['programme', 'level', 'session','documents']);
+            if ($search) {
+                $query->search($search);
+            }
+
+            $applicants = $query->paginate($perPage);
+
+            // Add additional data for each applicant
+            $applicants->getCollection()->transform(function ($applicant) {
+                $applicant->documents_count = $applicant->documents->count();
+                $applicant->verification_status = $applicant->verification_status ?? 'pending';
+                return $applicant;
+            });
+
+            return new APIResource($applicants, false, 200);
+
+        } catch (Exception $e) {
+            Log::error('Error getting document verification applicants: ' . $e->getMessage());
+            return new APIResource($e->getMessage(), true, 500);
+        }
+    }
+
+    /**
+     * Get verification statistics
+     */
+    public function getVerificationStats(Request $request)
+    {
+        try {
+            $sessionId = $request->get('session_id', session('current_session_id'));
+
+            $stats = [
+                'pending' => Applicant::where('admission_status', 'admitted')
+                    ->where('session_id', $sessionId)
+                    ->where('verification_status', 'pending')
+                    ->count(),
+                'under_review' => Applicant::where('admission_status', 'admitted')
+                    ->where('session_id', $sessionId)
+                    ->where('verification_status', 'under_review')
+                    ->count(),
+                'verified' => Applicant::where('admission_status', 'admitted')
+                    ->where('session_id', $sessionId)
+                    ->where('verification_status', 'verified')
+                    ->count(),
+                'rejected' => Applicant::where('admission_status', 'admitted')
+                    ->where('session_id', $sessionId)
+                    ->where('verification_status', 'rejected')
+                    ->count(),
+            ];
+
+            return new APIResource($stats, false, 200);
+
+        } catch (Exception $e) {
+            Log::error('Error getting verification stats: ' . $e->getMessage());
+            return new APIResource($e->getMessage(), true, 500);
+        }
+    }
+
+    /**
+     * Get applicant documents for verification
+     */
+    public function getApplicantDocuments(Request $request, $applicantId)
+    {
+        try {
+            $applicant = Applicant::findOrFail($applicantId);
+
+            $documents = $applicant->documents()
+                ->select(['id', 'document_type', 'file_name', 'file_path', 'file_type', 'verification_status', 'verification_notes', 'uploaded_at'])
+                ->orderBy('document_type')
+                ->get();
+
+            return new APIResource($documents, false, 200);
+
+        } catch (Exception $e) {
+            Log::error('Error getting applicant documents: ' . $e->getMessage());
+            return new APIResource($e->getMessage(), true, 500);
+        }
+    }
+
+    /**
+     * Get document preview URL
+     */
+    public function getDocumentPreview(Request $request, $applicantId, $documentId)
+    {
+        try {
+            $applicant = Applicant::findOrFail($applicantId);
+            $document = $applicant->documents()->findOrFail($documentId);
+
+            // Generate secure preview URL
+            $previewUrl = route('staff.documents.preview', [
+                'applicant' => $applicantId,
+                'document' => $documentId,
+                'token' => encrypt(['applicant_id' => $applicantId, 'document_id' => $documentId, 'expires' => now()->addHours(2)])
+            ]);
+
+            return new APIResource([
+                'preview_url' => $previewUrl,
+                'file_type' => $document->file_type,
+                'file_name' => $document->file_name
+            ], false, 200);
+
+        } catch (Exception $e) {
+            Log::error('Error getting document preview: ' . $e->getMessage());
+            return new APIResource($e->getMessage(), true, 500);
+        }
+    }
+
+    /**
+     * Verify a document
+     */
+    public function verifyDocument(Request $request)
+    {
+        try {
+            $request->validate([
+                'applicant_id' => 'required|exists:applicants,id',
+                'document_id' => 'required|integer',
+                'verification_status' => 'required|in:approved,rejected,resubmit',
+                'verification_notes' => 'nullable|string|max:1000'
+            ]);
+
+            $applicant = Applicant::findOrFail($request->applicant_id);
+            $document = $applicant->documents()->findOrFail($request->document_id);
+
+            $document->update([
+                'verification_status' => $request->verification_status,
+                'verification_notes' => $request->verification_notes,
+                'verified_by' => auth()->id(),
+                'verified_at' => now()
+            ]);
+
+            // Update applicant verification status if needed
+            if ($request->verification_status === 'approved') {
+                $this->updateApplicantVerificationStatus($applicant);
+            }
+
+            return new APIResource([
+                'message' => 'Document verification updated successfully',
+                'document' => $document
+            ], false, 200);
+
+        } catch (Exception $e) {
+            Log::error('Error verifying document: ' . $e->getMessage());
+            return new APIResource($e->getMessage(), true, 500);
+        }
+    }
+
+    /**
+     * Complete document verification for an applicant
+     */
+    public function completeDocumentVerification(Request $request)
+    {
+        try {
+            $request->validate([
+                'applicant_id' => 'required|exists:applicants,id'
+            ]);
+
+            $applicant = Applicant::findOrFail($request->applicant_id);
+
+            // Check if all documents are approved
+            $totalDocuments = $applicant->documents()->count();
+            $approvedDocuments = $applicant->documents()->where('verification_status', 'approved')->count();
+
+            if ($totalDocuments === 0) {
+                return new APIResource('No documents found for verification', true, 400);
+            }
+
+            if ($approvedDocuments !== $totalDocuments) {
+                return new APIResource('Not all documents have been approved', true, 400);
+            }
+
+            // Update applicant verification status
+            $applicant->update([
+                'verification_status' => 'verified',
+                'documents_verified_at' => now(),
+                'documents_verified_by' => auth()->id()
+            ]);
+
+            return new APIResource([
+                'message' => 'Document verification completed successfully',
+                'applicant' => $applicant
+            ], false, 200);
+
+        } catch (Exception $e) {
+            Log::error('Error completing document verification: ' . $e->getMessage());
+            return new APIResource($e->getMessage(), true, 500);
+        }
+    }
+
+    /**
+     * Generate admission letter preview
+     */
+    public function generateAdmissionLetterPreview(Request $request)
+    {
+        try {
+            $request->validate([
+                'applicant_id' => 'required|exists:applicants,id',
+                'letter_type' => 'required|in:standard,conditional,provisional',
+                'issue_date' => 'required|date',
+                'issued_by' => 'required|string|max:255',
+                'notes' => 'nullable|string|max:1000'
+            ]);
+
+            $applicant = Applicant::with(['programme', 'level', 'session'])->findOrFail($request->applicant_id);
+
+            // Generate admission letter using the document service
+            $documentService = new \App\Services\DocumentGenerationService();
+            $admissionLetter = $documentService->generateAdmissionLetter($applicant);
+
+            if (!$admissionLetter) {
+                return new APIResource('Unable to generate admission letter preview', true, 500);
+            }
+
+            return new APIResource([
+                'letter_html' => $admissionLetter['html'],
+                'filename' => $admissionLetter['filename']
+            ], false, 200);
+
+        } catch (Exception $e) {
+            Log::error('Error generating admission letter preview: ' . $e->getMessage());
+            return new APIResource($e->getMessage(), true, 500);
+        }
+    }
+
+    /**
+     * Issue admission letter
+     */
+    public function issueAdmissionLetter(Request $request)
+    {
+        try {
+            $request->validate([
+                'applicant_id' => 'required|exists:applicants,id',
+                'letter_type' => 'required|in:standard,conditional,provisional',
+                'issue_date' => 'required|date',
+                'issued_by' => 'required|string|max:255',
+                'notes' => 'nullable|string|max:1000',
+                'send_email' => 'boolean',
+                'process_mode' => 'required|in:manual,automatic'
+            ]);
+
+            $applicant = Applicant::with(['programme', 'level', 'session'])->findOrFail($request->applicant_id);
+
+            // Check if applicant is verified
+            if ($applicant->verification_status !== 'verified') {
+                return new APIResource('Applicant documents must be verified before issuing admission letter', true, 400);
+            }
+
+            DB::beginTransaction();
+
+            // Generate admission letter
+            $documentService = new \App\Services\DocumentGenerationService();
+            $admissionLetter = $documentService->generateAdmissionLetter($applicant);
+
+            if (!$admissionLetter) {
+                return new APIResource('Unable to generate admission letter', true, 500);
+            }
+
+            // Update applicant status
+            $applicant->update([
+                'admission_letter_issued' => true,
+                'admission_letter_issued_at' => now(),
+                'admission_letter_issued_by' => auth()->id(),
+                'admission_letter_type' => $request->letter_type,
+                'admission_letter_notes' => $request->notes
+            ]);
+
+            // Send email if requested
+            if ($request->send_email && $applicant->email) {
+                // Queue admission letter email
+                \App\Jobs\SendAdmissionLetterEmail::dispatch($applicant, $admissionLetter)
+                    ->onQueue('default');
+            }
+
+            DB::commit();
+
+            return new APIResource([
+                'message' => 'Admission letter issued successfully',
+                'applicant' => $applicant,
+                'letter_html' => $admissionLetter['html']
+            ], false, 200);
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Error issuing admission letter: ' . $e->getMessage());
+            return new APIResource($e->getMessage(), true, 500);
+        }
+    }
+
+    /**
+     * Update applicant verification status based on document approvals
+     */
+    private function updateApplicantVerificationStatus($applicant)
+    {
+        $totalDocuments = $applicant->documents()->count();
+        $approvedDocuments = $applicant->documents()->where('verification_status', 'approved')->count();
+        $rejectedDocuments = $applicant->documents()->where('verification_status', 'rejected')->count();
+
+        if ($totalDocuments === 0) {
+            return;
+        }
+
+        if ($approvedDocuments === $totalDocuments) {
+            $status = 'verified';
+        } elseif ($rejectedDocuments > 0) {
+            $status = 'rejected';
+        } else {
+            $status = 'under_review';
+        }
+
+        $applicant->update(['verification_status' => $status]);
+    }
+
+    /**
+     * Get admission configuration settings
+     */
+    public function getAdmissionConfiguration(Request $request)
+    {
+        try {
+            $settings = [
+                'admission_letter_process_mode' => \App\Services\Util::getConfigValue('admission_letter_process_mode') ?? 'manual',
+                'auto_send_acknowledgment_email' => \App\Services\Util::getConfigValue('auto_send_acknowledgment_email') ?? true,
+                'auto_send_notification_email' => \App\Services\Util::getConfigValue('auto_send_notification_email') ?? true,
+                'auto_send_verification_email' => \App\Services\Util::getConfigValue('auto_send_verification_email') ?? true,
+                'auto_send_admission_letter_email' => \App\Services\Util::getConfigValue('auto_send_admission_letter_email') ?? true,
+            ];
+
+            return new APIResource($settings, false, 200);
+
+        } catch (Exception $e) {
+            Log::error('Error getting admission configuration: ' . $e->getMessage());
+            return new APIResource($e->getMessage(), true, 500);
+        }
+    }
+
+    /**
+     * Save admission configuration settings
+     */
+    public function saveAdmissionConfiguration(Request $request)
+    {
+        try {
+            $request->validate([
+                'admission_letter_process_mode' => 'required|in:manual,automated',
+                'auto_send_acknowledgment_email' => 'boolean',
+                'auto_send_notification_email' => 'boolean',
+                'auto_send_verification_email' => 'boolean',
+                'auto_send_admission_letter_email' => 'boolean'
+            ]);
+
+            $settings = $request->only([
+                'admission_letter_process_mode',
+                'auto_send_acknowledgment_email',
+                'auto_send_notification_email',
+                'auto_send_verification_email',
+                'auto_send_admission_letter_email'
+            ]);
+
+            foreach ($settings as $key => $value) {
+                \App\Models\Configuration::updateOrCreate(
+                    ['name' => $key],
+                    ['value' => $value]
+                );
+            }
+
+            return new APIResource([
+                'message' => 'Admission configuration saved successfully',
+                'settings' => $settings
+            ], false, 200);
+
+        } catch (Exception $e) {
+            Log::error('Error saving admission configuration: ' . $e->getMessage());
+            return new APIResource($e->getMessage(), true, 500);
+        }
     }
 
 

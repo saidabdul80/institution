@@ -19,6 +19,7 @@ class CreateResultCompilationLogsTable extends Migration
             $table->integer('semester');
             $table->bigInteger('level_id')->unsigned();
             $table->bigInteger('programme_id')->unsigned()->nullable();
+            $table->bigInteger('programme_curriculum_id')->unsigned();  
             $table->bigInteger('department_id')->unsigned()->nullable();
             $table->bigInteger('faculty_id')->unsigned()->nullable();
             

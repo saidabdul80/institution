@@ -2,18 +2,17 @@
 
 namespace Modules\Result\Entities;
 
+use App\Models\Course;
+use App\Models\CourseCategory;
+use App\Models\Department;
+use App\Models\Faculty;
+use App\Models\Level;
+use App\Models\ProgrammeCurriculum;
+use App\Models\Staff;
+use App\Models\Student;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use Modules\Staff\Entities\Faculty;
-use Modules\Staff\Entities\Department;
-use Modules\Staff\Entities\Level;
-use Modules\Staff\Entities\Course;
-use Modules\Staff\Entities\Programme;
-use Modules\Staff\Entities\CourseCategory;
-use Modules\Staff\Entities\GradeSetting;
-use Modules\Student\Entities\Student;
-use Modules\Staff\Entities\Staff;
 
 class StudentCourseGrade extends Model
 {
@@ -28,6 +27,7 @@ class StudentCourseGrade extends Model
         'semester',
         'level_id',
         'programme_id',
+        'programme_curriculum_id',
         'department_id',
         'faculty_id',
         'ca_score',
@@ -74,7 +74,7 @@ class StudentCourseGrade extends Model
      */
     public function programme()
     {
-        return $this->belongsTo(Programme::class);
+        return $this->belongsTo(ProgrammeCurriculum::class, 'programme_curriculum_id');
     }
 
     /**

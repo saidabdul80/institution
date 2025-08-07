@@ -28,6 +28,8 @@ use Modules\Student\Http\Controllers\StudentController;
 
 use App\Http\Controllers\PaymentController as CentralPaymentController;
 use App\Http\Controllers\InvoiceController as CentralInvoiceController;
+use Modules\Staff\Http\Controllers\CurriculumController;
+use Modules\Staff\Http\Controllers\ProgrammeCurriculumController;
 use App\Http\Controllers\PDFController;
 use App\Jobs\CreateInvoice;
 
@@ -58,7 +60,7 @@ Route::prefix('staff')->group(function () {
     Route::post('/login', [StaffController::class, 'login']);
 
     Route::group(["middleware" => ['auth:api-staff']], function () {
-
+        Route::post('/staffs', [StaffController::class, 'getStaffs'])->middleware(['permission:can_view_staff']);
         Route::post('/logout', [StaffController::class, 'logout']);
         Route::group(["prefix" => "staff"], function () {
 
@@ -148,6 +150,29 @@ Route::prefix('staff')->group(function () {
             Route::get('/programme_courses/{search?}', [ProgrammeController::class, 'getProgrammeCourses'])->middleware(['permission:can_view_programme_courses']);
         });
 
+        // Curriculum Routes
+        Route::group(["prefix" => "curriculum"], function () {
+            Route::get('/', [CurriculumController::class, 'index'])->middleware(['permission:can_view_programme']);
+            Route::post('/', [CurriculumController::class, 'store'])->middleware(['permission:can_create_programme']);
+            Route::get('/active', [CurriculumController::class, 'getActive'])->middleware(['permission:can_view_programme']);
+            Route::get('/applications-by-programme', [CurriculumController::class, 'getApplicationsByProgramme'])->middleware(['permission:can_view_programme']);
+            Route::get('/{id}', [CurriculumController::class, 'show'])->middleware(['permission:can_view_programme']);
+            Route::put('/{id}', [CurriculumController::class, 'update'])->middleware(['permission:can_edit_programme']);
+            Route::delete('/{id}', [CurriculumController::class, 'destroy'])->middleware(['permission:can_delete_programme']);
+            Route::post('/{id}/activate', [CurriculumController::class, 'activate'])->middleware(['permission:can_edit_programme']);
+        });
+
+        // Programme Curriculum Routes
+        Route::group(["prefix" => "programme_curriculum"], function () {
+            Route::get('/', [ProgrammeCurriculumController::class, 'index'])->middleware(['permission:can_view_programme']);
+            Route::post('/', [ProgrammeCurriculumController::class, 'store'])->middleware(['permission:can_create_programme']);
+            Route::get('/active_frontend', [ProgrammeCurriculumController::class, 'getActiveForFrontend'])->middleware(['permission:can_view_programme']);
+            Route::get('/{id}', [ProgrammeCurriculumController::class, 'show'])->middleware(['permission:can_view_programme']);
+            Route::put('/{id}', [ProgrammeCurriculumController::class, 'update'])->middleware(['permission:can_edit_programme']);
+            Route::delete('/{id}', [ProgrammeCurriculumController::class, 'destroy'])->middleware(['permission:can_delete_programme']);
+            Route::post('/{id}/activate', [ProgrammeCurriculumController::class, 'activate'])->middleware(['permission:can_edit_programme']);
+        });
+
         Route::group(["prefix" => "admission_batch"], function () {
             Route::post('/create', [AdmissionController::class, 'createBatch'])->middleware(['permission:can_create_admission_batch']);
             Route::post('/update', [AdmissionController::class, 'updateBatch'])->middleware(['permission:can_create_admission_batch']);
@@ -234,6 +259,22 @@ Route::prefix('staff')->group(function () {
             Route::post('/unpublish_batch', [AdmissionController::class, 'unpublishByBatch'])->middleware('permission:can_give_admission');
             Route::post('/bulk_action', [AdmissionController::class, 'handleBulkAction'])->middleware('permission:can_give_admission');
 
+            // Document Verification routes
+            Route::get('/document_verification/applicants', [AdmissionController::class, 'getDocumentVerificationApplicants'])->middleware('permission:can_view_applicant');
+            Route::get('/document_verification/stats', [AdmissionController::class, 'getVerificationStats'])->middleware('permission:can_view_applicant');
+            Route::get('/applicants/{applicantId}/documents', [AdmissionController::class, 'getApplicantDocuments'])->middleware('permission:can_view_applicant');
+            Route::get('/applicants/{applicantId}/documents/{documentId}/preview', [AdmissionController::class, 'getDocumentPreview'])->middleware('permission:can_view_applicant');
+            Route::post('/documents/verify', [AdmissionController::class, 'verifyDocument'])->middleware('permission:can_give_admission');
+            Route::post('/documents/complete_verification', [AdmissionController::class, 'completeDocumentVerification'])->middleware('permission:can_give_admission');
+
+            // Admission Letter Management routes
+            Route::post('/letters/preview', [AdmissionController::class, 'generateAdmissionLetterPreview'])->middleware('permission:can_view_applicant');
+            Route::post('/letters/issue', [AdmissionController::class, 'issueAdmissionLetter'])->middleware('permission:can_give_admission');
+
+            // Admission Configuration routes
+            Route::get('/configuration', [AdmissionController::class, 'getAdmissionConfiguration'])->middleware('permission:can_view_applicant');
+            Route::post('/configuration', [AdmissionController::class, 'saveAdmissionConfiguration'])->middleware('permission:can_edit_configuration');
+
             /* Route::get('/change_department', [AdmissionController::class, 'changeDepartment']);
             Route::get('/change_faculty', [AdmissionController::class, 'changeFaculty']);
             Route::get('/change_level', [AdmissionController::class, 'changeLevel']); */
@@ -245,6 +286,7 @@ Route::prefix('staff')->group(function () {
             Route::post('/export', [ApplicantController::class, 'exportApplicants']);
             Route::post('/all', [ApplicantController::class, 'getAllApplicants']); //->middleware('permission:can_view_applicant');
             Route::get('/stats', [ApplicantController::class, 'getApplicantStats']); //s->middleware('permission:can_view_applicant');
+            Route::get('/{id}', [ApplicantController::class, 'getApplicantById'])->middleware('permission:can_view_applicant');
             Route::post('/update_status', [ApplicantController::class, 'updateApplicantStatus'])->middleware('permission:can_give_admission');
             Route::post('/bulk_update_status', [ApplicantController::class, 'bulkUpdateApplicantStatus'])->middleware('permission:can_give_admission');
             Route::post('/process', [ApplicantController::class, 'processApplication'])->middleware('permission:can_set_applicant_qualification_status');

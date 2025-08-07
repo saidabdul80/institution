@@ -23,7 +23,7 @@ class StudentService{
         unset($studentInfo['id']);
         //$rejected = [];
         /* 
-        $params = ['matric_number','application_id','entry_session_id','applied_level_id','applied_programme_id','programme_type_id','programme_id','level_id','mode_of_entry_id','department_id','faculty_id'];
+        $params = ['matric_number','application_id','entry_session_id','applied_level_id','applied_programme_curriculum_id','programme_type_id','programme_id','level_id','mode_of_entry_id','department_id','faculty_id'];
         foreach ($params as $param ) {
             if(array_key_exists($param, $studentInfo)){
                 unset($studentInfo[$param]);

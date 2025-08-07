@@ -1114,7 +1114,7 @@ class DashboardRepository
             ->groupBy("p.name","l.title","p.code")
             ->get()->groupBy("level");
         }else{
-            $programme_id = "s.applied_programme_id";
+            $programme_id = "s.applied_programme_curriculum_id";
             if($payment_short_name == "acceptance_fee"){
                 $programme_id = "s.programme_id";
             }
@@ -1230,7 +1230,7 @@ class DashboardRepository
             ->groupBy("p.name","p.code")
             ->get();
         }else{
-            $programme_id = "s.applied_programme_id";
+            $programme_id = "s.applied_programme_curriculum_id";
             if($payment_short_name == "acceptance_fee"){
                 $programme_id = "s.programme_id";
             }

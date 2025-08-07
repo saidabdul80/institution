@@ -55,6 +55,14 @@ class ApplicantService extends Utilities{
     }
 
     /**
+     * Get individual applicant by ID
+     */
+    public function getApplicantById($id)
+    {
+        return $this->applicantRepository->getApplicantById($id);
+    }
+
+    /**
      * Update applicant status (admission status)
      */
     public function updateApplicantStatus($request)

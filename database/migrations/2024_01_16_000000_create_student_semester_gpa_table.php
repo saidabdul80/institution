@@ -20,7 +20,7 @@ class CreateStudentSemesterGpaTable extends Migration
             $table->integer('semester');
             $table->bigInteger('level_id')->unsigned();
             $table->bigInteger('programme_id')->unsigned();
-            
+            $table->bigInteger('programme_curriculum_id')->unsigned();    
             // Credit Unit Tracking
             $table->integer('registered_credit_units')->default(0); // RCU
             $table->integer('earned_credit_units')->default(0);     // ECU

@@ -31,6 +31,7 @@ class ResultController extends Controller
                 'session_id' => 'required',
                 'level_id' => 'required',
                 'programme_id' => 'required',
+                'programme_curriculum_id' => 'required',
                 'semester' => 'required'
             ]);
 
@@ -68,6 +69,7 @@ class ResultController extends Controller
                 'session_id' => 'required',
                 'level_id' => 'required',
                 'programme_id' => 'required',
+                'programme_curriculum_id' => 'required',
                 'semester' => 'required'
             ]);
 
@@ -87,6 +89,7 @@ class ResultController extends Controller
                 'session_id' => 'required',
                 'level_id' => 'required',
                 'programme_id' => 'required',
+                'programme_curriculum_id' => 'required',
                 'course_id' => 'required',
                 'semester' => 'required'
             ]);
@@ -133,6 +136,7 @@ class ResultController extends Controller
                 'session_id' => 'required',
                 'level_id' => 'required',
                 'programme_id' => 'required',
+                'programme_curriculum_id' => 'required',
                 'course_id' => 'required',
                 'semester' => 'required'
             ]);
@@ -154,6 +158,7 @@ class ResultController extends Controller
                 'semester' => 'required|integer|min:1|max:3',
                 'level_id' => 'required|exists:levels,id',
                 'programme_id' => 'nullable|exists:programmes,id',
+                'programme_curriculum_id' => 'nullable|exists:programme_curriculums,id',
                 'department_id' => 'nullable|exists:departments,id'
             ]);
 
@@ -162,6 +167,7 @@ class ResultController extends Controller
                 $request->semester,
                 $request->level_id,
                 $request->programme_id,
+                $request->programme_curriculum_id,
                 $request->department_id,
                 auth()->id()
             );
@@ -185,7 +191,8 @@ class ResultController extends Controller
                 'session_id' => 'nullable|exists:sessions,id',
                 'semester' => 'nullable|integer|min:1|max:3',
                 'level_id' => 'nullable|exists:levels,id',
-                'programme_id' => 'nullable|exists:programmes,id'
+                'programme_id' => 'nullable|exists:programmes,id',
+                'programme_curriculum_id' => 'nullable|exists:programme_curriculums,id',
             ]);
 
             $query = StudentSemesterGpa::with(['student', 'session', 'level', 'programme', 'compiledBy']);
@@ -208,6 +215,10 @@ class ResultController extends Controller
 
             if ($request->programme_id) {
                 $query->where('programme_id', $request->programme_id);
+            }
+
+            if ($request->programme_curriculum_id) {
+                $query->where('programme_curriculum_id', $request->programme_curriculum_id);
             }
 
             $gpaRecords = $query->orderBy('session_id', 'desc')
@@ -260,14 +271,14 @@ class ResultController extends Controller
     public function getGradeSettings(Request $request)
     {
         try {
-            $programmeId = $request->get('programme_id');
+            $programmeId = $request->get('programme_curriculum_id');
 
             $gradeSettings = GradeSetting::getGradeScaleForProgramme($programmeId);
 
             return new APIResource([
                 'grade_settings' => $gradeSettings,
                 'is_programme_specific' => $programmeId && $gradeSettings->first()?->isProgrammeSpecific(),
-                'programme_id' => $programmeId
+                'programme_curriculum_id' => $programmeId
             ], false, 200);
         } catch (Exception $e) {
             return new APIResource($e->getMessage(), true, 500);
@@ -296,6 +307,7 @@ class ResultController extends Controller
         try {
             $request->validate([
                 'programme_id' => 'nullable|exists:programmes,id',
+                'programme_curriculum_id' => 'nullable|exists:programme_curriculums,id',
                 'min_score' => 'required|numeric|min:0|max:100',
                 'max_score' => 'required|numeric|min:0|max:100|gte:min_score',
                 'grade' => 'required|string|max:2',
@@ -306,6 +318,7 @@ class ResultController extends Controller
 
             $gradeSettingData = $request->only([
                 'programme_id',
+                'programme_curriculum_id',
                 'min_score',
                 'max_score',
                 'grade',

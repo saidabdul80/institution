@@ -12,13 +12,19 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 //use Illuminate\Support\Facades\DB;
 use EloquentFilter\Filterable;
 use Illuminate\Support\Facades\Log;
+// Add import for ProgrammeCurriculum - will be added when the model is created
 
 class Applicant extends Authenticatable
 {
     use HasApiTokens, HasFactory, SoftDeletes, Utils, Filterable;
 
 
-    protected $fillable = ['*'];
+    protected $fillable = [
+        "first_name", "middle_name", "surname", "phone_number", "gender", "email", "application_number", "batch_id", "session_id", "lga_id", "country_id", "state_id", "applied_level_id", "level_id", "applied_programme_curriculum_id","programme_curriculum_id", "programme_id", "programme_type_id", "mode_of_entry_id", "application_status_id", "department_id", "faculty_id", "years_of_experience", "working_class", "category", "present_address", "permanent_address", "guardian_full_name", "guardian_phone_number", "guardian_address", "guardian_email", "guardian_relationship", "sponsor_full_name", "sponsor_type", "sponsor_address", "next_of_kin_full_name", "next_of_kin_address", "next_of_kin_phone_number", "next_of_kin_relationship", "wallet_number", "prev_institution", "prev_year_of_graduation", "health_status", "health_status_description", "blood_group", "disability", "religion", "marital_status", "admission_status", "published_at", "final_submitted_at", "is_final_submitted", "final_submission_notes", "published_by", "publication_notes", "admission_serial_number", "qualified_status", "final_submission", "application_progress", "logged_in_time", "logged_in_count", "picture", "signatuare", "jamb_number", "jamb_subject_scores", "is_imported", "import_batch_id", "imported_at", "application_fee_paid", "documents_completed", "documents_completed_at", "application_fee_paid_at", "scratch_card", "entrance_exam_score", "entrance_exam_status", "deleted_at", "deleted_by", "password", "created_at", "updated_at", "jamb_score", "date_of_birth",
+        "acceptance_fee_paid",
+        "acceptance_fee_paid_at",
+    ];
+
     protected $hidden =['password'];
 
     protected $casts = [
@@ -27,7 +33,11 @@ class Applicant extends Authenticatable
         'application_fee_paid' => 'boolean',
         'imported_at' => 'datetime',
         'application_fee_paid_at' => 'datetime',
+        'acceptance_fee_paid' => 'boolean',
+        'acceptance_fee_paid_at' => 'datetime',
         'published_at' => 'datetime',
+        'final_submitted_at' => 'datetime',
+        'is_final_submitted' => 'boolean',
     ];
     /*  protected static function newFactory()
     {
@@ -71,6 +81,11 @@ class Applicant extends Authenticatable
         return $this->belongsTo(Programme::class);
     }
 
+    public function programmeCurriculum()
+    {
+        return $this->belongsTo(ProgrammeCurriculum::class, 'programme_curriculum_id');
+    }
+
     public function level(){
         return $this->belongsTo(Level::class);
     }
@@ -87,7 +102,7 @@ class Applicant extends Authenticatable
         return $this->hasOne(ApplicationStatus::class);
     }
 
-    public function qualifications(){   
+    public function qualifications(){
         return $this->hasMany(ApplicantQualification::class,'applicant_id');
     }
 
@@ -103,7 +118,7 @@ class Applicant extends Authenticatable
     }
 
     public function getProgrammeNameAttribute() {
-        return Programme::find($this->applied_programme_id)?->name;
+        return Programme::find($this->applied_programme_curriculum_id)?->name;
     }
 
     public function getAdmittedProgrammeNameAttribute() {
@@ -119,7 +134,7 @@ class Applicant extends Authenticatable
     }
 
     public function getEntryModeAttribute() {
-       return EntryMode::find($this->mode_of_entry_id)?->code;        
+       return EntryMode::find($this->mode_of_entry_id)?->code;
     }
 
     public function getApplicationTypeAttribute() {
@@ -161,18 +176,18 @@ class Applicant extends Authenticatable
 
   public function getQualifyAttribute() {
     $olevelResults = OlevelResult::where('applicant_id', $this->id)->pluck('subjects_grades');
-    $programme = Programme::where('id', $this->applied_programme_id)->first();
+    $programme = Programme::where('id', $this->applied_programme_curriculum_id)->first();
     $required_subjects = $this->subjects->filter(function ($subject) use ($programme) {
         return in_array($subject->id, $programme->required_subjects);
     })->pluck('name')->toArray();
-    $subjects = !empty($required_subjects) ? 
+    $subjects = !empty($required_subjects) ?
                 (is_array($required_subjects) ? $required_subjects : explode(',', $required_subjects)) : [];
-    $grades = !empty($programme?->accepted_grades) ? 
+    $grades = !empty($programme?->accepted_grades) ?
               collect(explode(',', $programme?->accepted_grades))
                   ->map(function($item) {
                       return strtoupper(trim($item)); // Normalize to uppercase and trim whitespace
                   })->toArray() : [];
-    
+
     $checkSubject = [];
     $checkSubject2 = [];
 
@@ -188,7 +203,7 @@ class Applicant extends Authenticatable
     foreach ($olevelResults as $key => $olevelResult) {
         // Parse the result data
         $result = is_string($olevelResult) ? json_decode($olevelResult, true) : (array)$olevelResult;
-        
+
         if (!is_array($result)) {
             continue;
         }
@@ -200,7 +215,7 @@ class Applicant extends Authenticatable
 
         foreach ($subjects as $subject) {
             $subjectKey = ucfirst(strtolower($subject));
-            
+
             if (!$oResult->has($subjectKey)) {
                 $checkSubject[$subject] = $key == 0 ? 0 : ($checkSubject2[$subject] = 0);
                 continue;
@@ -219,7 +234,7 @@ class Applicant extends Authenticatable
 
     $first = array_sum(array_values($checkSubject));
     $second = array_sum(array_values($checkSubject2));
-    
+
     if ($first == count($subjects)) {
         return ["is_qualify" => true, "info" => 'One Result'];
     } elseif ($first + $second >= count($subjects)) {
@@ -256,33 +271,33 @@ class Applicant extends Authenticatable
         return $this->hasMany(Invoice::class,'owner_id')->where('owner_type', 'applicant');
     }
 
-    
+
     public function newQuery()
     {
-        $query2 = parent::newQuery();        
+        $query2 = parent::newQuery();
         $subquery = Invoice::select('status')
-        ->whereRaw('owner_id= applicants.id and owner_type = "applicant" ')        
+        ->whereRaw('owner_id= applicants.id and owner_type = "applicant" ')
         ->whereIn('invoice_type_id', function ($query) {
             //SELECT ALL invoice type id for application fee with session id of the student
             $query->select('i.id')
                 ->from('invoice_types as i')->join('payment_categories as p','i.payment_category_id','=','p.id' )
                 ->whereRaw('p.short_name = "application_fee" and i.session_id = applicants.session_id');
-        })         
-        ->whereRaw('invoices.session_id = applicants.session_id and invoices.status = "paid"')->latest()->limit(1)->toSql();        
+        })
+        ->whereRaw('invoices.session_id = applicants.session_id and invoices.status = "paid"')->latest()->limit(1)->toSql();
 
         $subquery2 = Invoice::select('status')
-        ->whereRaw('owner_id= applicants.id and owner_type = "applicant" ')        
+        ->whereRaw('owner_id= applicants.id and owner_type = "applicant" ')
         ->whereIn('invoice_type_id', function ($query) {
             //SELECT ALL invoice type id for application fee with session id of the student
             $query->select('i.id')
                 ->from('invoice_types as i')->join('payment_categories as p','i.payment_category_id','=','p.id' )
                 ->whereRaw('p.short_name = "registration_fee" and i.session_id = applicants.session_id');
-        })         
-        ->whereRaw('invoices.session_id = applicants.session_id and invoices.status = "paid"')->latest()->limit(1)->toSql();        
-        
-        return $query2->selectRaw('IF(('.$subquery.') IS NULL , "Unpaid","Paid") as application_fee, IF(('.$subquery2.') IS NULL , "Unpaid","Paid") as registration_fee, applicants.*');            
-        
-    }   
+        })
+        ->whereRaw('invoices.session_id = applicants.session_id and invoices.status = "paid"')->latest()->limit(1)->toSql();
+
+        return $query2->selectRaw('IF(('.$subquery.') IS NULL , "Unpaid","Paid") as application_fee, IF(('.$subquery2.') IS NULL , "Unpaid","Paid") as registration_fee, applicants.*');
+
+    }
 
     public function getApplicationFeeAttribute(){
 
@@ -293,7 +308,7 @@ class Applicant extends Authenticatable
     }
 
     public function scopeQuery($query)
-    {     
+    {
         return $query;
     }
 
@@ -340,5 +355,40 @@ class Applicant extends Authenticatable
         ]);
     }
 
-    protected $appends = ['matric_number','qualify' ,'level', 'programme_name', 'programme_type','entry_mode', 'active_state', 'state','country','faculty','department','lga', 'qualification', 'full_name','admitted_programme_name','user_type','submitted_date_ago'];
+    // Final submission methods
+    public function isFinalSubmitted()
+    {
+        return $this->is_final_submitted;
+    }
+
+    public function finalSubmit($notes = null)
+    {
+        Log::info('Final submitted by ' ,[$this]);
+        $this->update([
+            'final_submitted_at' => now(),
+            'is_final_submitted' => true,
+            'final_submission_notes' => $notes,
+        ]);
+    }
+
+    public function canEdit()
+    {
+        return !$this->is_final_submitted;
+    }
+
+    public function scopeFinalSubmitted($query)
+    {
+        return $query->where('is_final_submitted', true);
+    }
+
+    public function scopeNotFinalSubmitted($query)
+    {
+        return $query->where('is_final_submitted', false);
+    }
+
+    public function documents(){
+        return $this->hasMany(Document::class,'owner_id')->where('owner_type','applicant');
+    }
+
+    protected $appends = ['matric_number','qualify' ,'level', 'programme_name', 'programme_type','entry_mode', 'active_state', 'state','country','faculty','department','lga', 'qualification', 'full_name','admitted_programme_name','user_type','submitted_date_ago',];
 }

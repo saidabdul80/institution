@@ -15,6 +15,7 @@ use App\Models\Student;
 use App\Models\InvoiceType;
 use App\Models\Level;
 use App\Models\Programme;
+use App\Models\ProgrammeCurriculum;
 use App\Repositories\InvoiceRepository;
 use App\Services\Utilities;
 use Exception;
@@ -163,7 +164,7 @@ class AdmissionRepository{
     //         } elseif (!empty($programme_id)) {
     //             $programme_id_x = $programme_id;
     //         } else {
-    //             $programme_id_x = $applicant['applied_programme_id'];
+    //             $programme_id_x = $applicant['applied_programme_curriculum_id'];
     //         }
 
     //         // Determine level_id based on admission options
@@ -220,7 +221,7 @@ class AdmissionRepository{
 
     // }
 
-    public function admitApplicant($applicant_ids, $level_id = null, $programme_id = null, $admission_options = [], $session_id=null)
+    public function admitApplicant($applicant_ids, $level_id = null, $programme_id = null,  $admission_options = [], $session_id=null)
     {
         $batch = DB::table('configurations')->where('name','current_admission_batch')->first()->value;
 
@@ -235,6 +236,7 @@ class AdmissionRepository{
         $changeLevel = $admission_options['change_level'] ?? false;
         $justAdmit = $admission_options['just_admit'] ?? false;
         $newProgrammeId = $admission_options['new_programme_id'] ?? null;
+        $newProgrammedCurriculumId = $admission_options['new_programmed_curriculum_id'] ?? null;
         $newLevelId = $admission_options['new_level_id'] ?? null;
 
         $unpaidApplicantIds = [];
@@ -242,31 +244,31 @@ class AdmissionRepository{
 
         $updates = [];
            // Get programme and level details
-           if ($changeProgramme) {
-                $finalProgrammeId = $newProgrammeId;
-            }else{
-                $finalProgrammeId = $applicants[0]->applied_programme_id;
-            }
+        $programmeCurriculum = null;
+        if ($changeProgramme) {
+            $finalProgrammeId = $newProgrammeId ;
+            $programmeCurriculum = ProgrammeCurriculum::active()->where('programme_id', $finalProgrammeId)->first();
+        }
 
-            $programme = Programme::find($finalProgrammeId);
-            if ($changeLevel) {
-                $finalLevelId = $newLevelId;
-            }else{
-                $finalLevelId = $applicants[0]->applied_level_id?? $applicants[0]->level_id;
-            }
-            $level = Level::find($finalLevelId);
+
+        if ($changeLevel) {
+            $finalLevelId = $newLevelId;
+        }else{
+            $finalLevelId = $applicants[0]->applied_level_id?? $applicants[0]->level_id;
+        }
+        
         foreach ($applicants as $applicant) {
             // Skip unpaid applicants
-            
+            Log::info($applicant);
             if ($applicant->application_fee != 'paid') {
                 $unpaidApplicantIds[] = $applicant->application_number;
                 continue;
             }
 
             // Determine the final programme_id
-            $finalProgrammeId = $changeProgramme && $newProgrammeId 
-                ? $newProgrammeId 
-                : ($programme_id ?: $applicant->applied_programme_id);
+            if($changeProgramme && $newProgrammeId){
+                $programmeCurriculum = ProgrammeCurriculum::active()->where('programme_id', $finalProgrammeId)->first();
+            }
 
             // Determine the final level_id
             $finalLevelId = $changeLevel && $newLevelId 
@@ -283,8 +285,10 @@ class AdmissionRepository{
 
             // Only update programme/level if we're changing them or not just admitting
             if ($changeProgramme || !$justAdmit) {
-                $updateData['programme_id'] = $finalProgrammeId;
+                $updateData['programme_id'] = $programmeCurriculum->programme_id; 
+                $updateData['programme_curriculum_id'] = $programmeCurriculum->id;
             }
+            
             if ($changeLevel || !$justAdmit) {
                 $updateData['level_id'] = $finalLevelId;
             }
@@ -292,9 +296,6 @@ class AdmissionRepository{
             // Add to bulk updates
             $updates[] = array_merge(['id' => $applicant->id], $updateData);
 
-            // Email sending removed - will be sent when admission is published
-            // SendAdmissionEmail::dispatch($applicant, $schoolName, $schoolLogo, $programme, $level)
-            // ->onQueue('default');
         }
 
         if (!empty($updates)) {
@@ -307,10 +308,11 @@ class AdmissionRepository{
         
         return 'Admitted successfully';
     }
-    public function admitBulkApplicant ($application_numbers,$programme_id=null, $level_id=null){               
+
+    public function admitBulkApplicant ($application_numbers,$programme_id=null, $programme_curriculum_id = null, $level_id=null){               
         $session_id =  DB::table('configurations')->where('name','current_application_session')->first()?->value;
         $applicant_ids = DB::table('applicants')->whereIn('application_number',$application_numbers)->pluck('id');
-        return $this->admitApplicant($applicant_ids,$session_id,'',$level_id,$programme_id);/* 
+        return $this->admitApplicant($applicant_ids,$session_id,'',$level_id,$programme_id, $programme_curriculum_id );/* 
         $paid_applicant_ids = $this->getPaidApplicantsOrStudentsIDs($session_id,$payment_name);
         $filtered_id = array_filter($applicant_ids, function($id) use($paid_applicant_ids){
             if(in_array($id, $paid_applicant_ids)){
@@ -325,7 +327,7 @@ class AdmissionRepository{
             $applicants = $applicants->toArray();
             foreach($applicants as &$applicant){
                 if($maintain_programme_id){
-                    $applicant->programme_id = $applicant->applied_programme_id ;
+                    $applicant->programme_id = $applicant->applied_programme_curriculum_id ;
                 }else{
                     $applicant->programme_id = $programme_id;
                 }
@@ -384,7 +386,7 @@ class AdmissionRepository{
     }
 
 
-    public function changeProgramme($applicant_ids, $programme_id,$faculty_id, $department_id){
+    public function changeProgramme($applicant_ids, $programme_id, $programme_curriculum_id, $faculty_id, $department_id){
         $areStudents = [];
         foreach($applicant_ids as $id){
             $applicant = $this->applicant::find($id);
@@ -408,6 +410,7 @@ class AdmissionRepository{
             } */
 
             $applicant->programme_id = $programme_id;
+            $applicant->programme_curriculum_id = $programme_curriculum_id;
             $applicant->faculty_id = $faculty_id;
             $applicant->department_id = $department_id;
             $applicant->save();
@@ -415,17 +418,15 @@ class AdmissionRepository{
         return $areStudents;
     }
 
-    public function changeAdmittedProgramme($applicant_id, $programme_id, $department_id, $faculty_id, $programme_type_id, $level_id){
+    public function changeAdmittedProgramme($applicant_id, $programme_id, $programme_curriculum_id, $department_id, $faculty_id, $programme_type_id, $level_id){
         $applicant = $this->applicant::find($applicant_id);
         $check = $this->applicantExistAsStudent($applicant_id);
         if (!empty($check)) {
             throw new \Exception("Applicant programme cannot be changed", 400);
         }
 
-        /* if (!$this->checkQualify($applicant, $programme_id)['is_qualify']) {
-            throw new \Exception("Applicant is not qualify for this programme",400);
-        } */
         $applicant->programme_id = $programme_id;
+        $applicant->programme_curriculum_id = $programme_curriculum_id;
         $applicant->faculty_id = $faculty_id;
         $applicant->department_id = $department_id;
         $applicant->programme_type_id = $programme_type_id;

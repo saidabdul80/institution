@@ -1,6 +1,7 @@
 <?php
 namespace Modules\Application\Services;
 
+use App\Models\ProgrammeCurriculum;
 use App\Services\PaymentService as AppPaymentService;
 use Exception;
 use Modules\Application\Repositories\PaymentRepository;
@@ -46,7 +47,7 @@ class PaymentsService{
        // $faculty_id = $this->paymentRepository->getFacultyByDepartmentId($applicant->department_id);
         $query = [
             "gender" => $applicant->gender,
-            "programme_id" => $applicant->applied_programme_id,
+            "programme_id" => $applicant->programme_id ?? ProgrammeCurriculum::find($applicant->applied_programme_curriculum_id)->programme_id,
             "programme_type_id" => $applicant->programme_type_id,
             "department_id" => $applicant->department_id,
             "faculty_id" => $applicant->faculty_id,

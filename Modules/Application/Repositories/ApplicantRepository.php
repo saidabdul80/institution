@@ -24,6 +24,7 @@ use function PHPUnit\Framework\throwException;
 use Illuminate\Support\Facades\Log;
 use Modules\Application\Database\factories\AlevelFactory;
 use App\Models\Faculty;
+use App\Models\ProgrammeCurriculum;
 use App\Repositories\ConfigurationRepository;
 use App\Services\Utilities;
 use Illuminate\Support\Facades\Storage;
@@ -59,8 +60,11 @@ use Throwable;
         $this->level = $level;
 
         $this->fields = [
-            "first_name", "middle_name", "surname", "phone_number", "gender", "email", "application_number", "batch_id", "session_id", "lga_id", "country_id", "state_id", "applied_level_id", "level_id", "applied_programme_id", "programme_id", "programme_type_id", "mode_of_entry_id", "application_status_id", "department_id", "faculty_id", "date_of_birth", "years_of_experience", "working_class", "category", "present_address", "permanent_address", "guardian_full_name", "guardian_phone_number", "guardian_address", "guardian_email", "guardian_relationship", "sponsor_full_name", "sponsor_type", "sponsor_address", "next_of_kin_full_name", "next_of_kin_address", "next_of_kin_phone_number", "next_of_kin_relationship", "wallet_number", "prev_institution", "prev_year_of_graduation", "health_status", "health_status_description", "blood_group", "disability", "religion", "marital_status", "admission_status", "admission_serial_number", "qualified_status", "final_submission", "application_progress", "logged_in_time", "logged_in_count", "picture", "signatuare", "jamb_number", "scratch_card", "entrance_exam_score", "entrance_exam_status", "deleted_at", "deleted_by", "password", "created_at", "updated_at",
-            "jamb_score"
+            "first_name", "middle_name", "surname", "phone_number", "gender", "email", "application_number", "batch_id", "session_id", "lga_id", "country_id", "state_id", "applied_level_id", "level_id",
+            "applied_programme_curriculum_id", 
+            "programme_id", 
+            "programme_type_id", "mode_of_entry_id", "application_status_id", "department_id", "faculty_id", "date_of_birth", "years_of_experience", "working_class", "category", "present_address", "permanent_address", "guardian_full_name", "guardian_phone_number", "guardian_address", "guardian_email", "guardian_relationship", "sponsor_full_name", "sponsor_type", "sponsor_address", "next_of_kin_full_name", "next_of_kin_address", "next_of_kin_phone_number", "next_of_kin_relationship", "wallet_number", "prev_institution", "prev_year_of_graduation", "health_status", "health_status_description", "blood_group", "disability", "religion", "marital_status", "admission_status", "admission_serial_number", "qualified_status", "final_submission", "application_progress", "logged_in_time", "logged_in_count", "picture", "signatuare", "jamb_number", "scratch_card", "entrance_exam_score", "entrance_exam_status", "deleted_at", "deleted_by", "password", "created_at", "updated_at",
+            "jamb_score","programme_curriculum_id"  
         ];
     }
 
@@ -110,7 +114,7 @@ use Throwable;
         $applicant->gender = $request->get('gender')??"";
         $applicant->department_id = $request->get('department_id');
         $applicant->faculty_id = $faculty_id;
-        $applicant->applied_programme_id = $request->get('applied_programme_id');
+        $applicant->applied_programme_curriculum_id = $request->get('applied_programme_curriculum_id');
         $applicant->mode_of_entry_id = $request->get('mode_of_entry_id');
         $applicant->password = Hash::make($request->password);
         $applicant->country_id = $request->get('country_id');
@@ -186,8 +190,13 @@ use Throwable;
             if(array_key_exists("programme_id", $data)){
                 unset($data["programme_id"]);
             }
-            if(array_key_exists("applied_programme_id", $data)){
-                unset($data["applied_programme_id"]);
+
+            if(array_key_exists("programme_curriculum_id", $data)){
+                unset($data["programme_curriculum_id"]);
+            }
+
+            if(array_key_exists("applied_programme_curriculum_id", $data)){
+                unset($data["applied_programme_curriculum_id"]);
             }
         }
         $filteredData = array_filter($data, function ($key) {
@@ -564,7 +573,7 @@ use Throwable;
         $query = [
             "gender" => $applicant->gender,
             "owner_type" => 'applicant',
-            "programme_id" => $applicant->programme_id ?? $applicant->applied_programme_id,
+            "programme_id" => $applicant->programme_id ?? ProgrammeCurriculum::find($applicant->applied_programme_curriculum_id)->programme_id,
             "programme_type_id" => $applicant->programme_type_id,
             "department_id" => $applicant->department_id,
             "faculty_id" => $applicant->faculty_id,

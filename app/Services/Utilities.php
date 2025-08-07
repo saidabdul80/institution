@@ -115,10 +115,10 @@ class Utilities {
         if($programmeTypeEnabled){
             $programme_type = DB::table('programme_types')->find($user['programme_type_id'])?->short_name;
         }
-        // if(array_key_exists('applied_programme_id', $user)){
-        //     $user['programme_id'] = $user['applied_programme_id'];
+        // if(array_key_exists('applied_programme_curriculum_id', $user)){
+        //     $user['programme_id'] = $user['applied_programme_curriculum_id'];
       
-        $programme_id = $user['programme_id'] ?? $user['applied_programme_id'];  
+        $programme_id = $user['programme_id'] ?? $user['applied_programme_curriculum_id'];  
         $programme = DB::table('programmes')->where('id',$programme_id)->first()?->code;        
         if($programme == ''){
             throw new \Exception('No Program found');

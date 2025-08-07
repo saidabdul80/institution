@@ -23,9 +23,10 @@ class ResultService
         $sessionId = $request->get('session_id');
         $levelId = $request->get('level_id');
         $programmeId = $request->get('programme_id');
+        $programmeCurriculumId = $request->get('programme_curriculum_id');
         $semester = $request->get('semester');
 
-        return $this->resultRepository->computeResults($sessionId, $levelId, $programmeId, $semester);
+        return $this->resultRepository->computeResults($sessionId, $levelId, $programmeId, $programmeCurriculumId, $semester);
     }
 
     /**
@@ -48,9 +49,10 @@ class ResultService
         $sessionId = $request->get('session_id');
         $levelId = $request->get('level_id');
         $programmeId = $request->get('programme_id');
+        $programmeCurriculumId = $request->get('programme_curriculum_id');
         $semester = $request->get('semester');
 
-        return $this->resultRepository->getStudentsForComputation($sessionId, $levelId, $programmeId, $semester);
+        return $this->resultRepository->getStudentsForComputation($sessionId, $levelId, $programmeId, $programmeCurriculumId, $semester);
     }
 
     /**
@@ -61,10 +63,11 @@ class ResultService
         $sessionId = $request->get('session_id');
         $levelId = $request->get('level_id');
         $programmeId = $request->get('programme_id');
+        $programmeCurriculumId = $request->get('programme_curriculum_id');
         $courseId = $request->get('course_id');
         $semester = $request->get('semester');
 
-        return $this->resultRepository->getStudentsWithResults($sessionId, $levelId, $programmeId, $courseId, $semester);
+        return $this->resultRepository->getStudentsWithResults($sessionId, $levelId, $programmeId, $programmeCurriculumId, $courseId, $semester);
     }
 
     /**
@@ -111,9 +114,10 @@ class ResultService
         $sessionId = $request->get('session_id');
         $levelId = $request->get('level_id');
         $programmeId = $request->get('programme_id');
+        $programmeCurriculumId = $request->get('programme_curriculum_id');
         $courseId = $request->get('course_id');
         $semester = $request->get('semester');
 
-        return $this->resultRepository->bulkUploadResults($file, $sessionId, $levelId, $programmeId, $courseId, $semester);
+        return $this->resultRepository->bulkUploadResults($file, $sessionId, $levelId, $programmeId, $programmeCurriculumId, $courseId, $semester);
     }
 }

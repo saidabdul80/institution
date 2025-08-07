@@ -30,7 +30,7 @@ class CreateStudents extends Migration
                 $table->bigInteger('country_id')->nullable()->unsigned();
                 $table->bigInteger('state_id')->nullable()->unsigned();
                 $table->bigInteger('applied_level_id')->nullable()->unsigned();
-                $table->bigInteger('applied_programme_id')->unsigned();
+                $table->bigInteger('applied_programme_curriculum_id')->unsigned();
                 $table->bigInteger('programme_type_id')->unsigned();
                 $table->bigInteger('programme_id')->unsigned();
                 $table->bigInteger("programme_option_id")->nullable();

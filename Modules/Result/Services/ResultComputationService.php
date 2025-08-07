@@ -2,23 +2,23 @@
 
 namespace Modules\Result\Services;
 
+use App\Models\Result;
+use App\Models\Session;
+use App\Models\Student;
+use App\Models\StudentCourseRegistration as ModelsStudentCourseRegistration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Modules\Result\Entities\Result;
-use Modules\Result\Entities\StudentSemesterGpa;
-use Modules\Staff\Entities\StudentCourseRegistration;
-use Modules\Staff\Entities\Session;
+use Carbon\Carbon;
 use Modules\Result\Entities\GradeSetting;
 use Modules\Result\Entities\ResultCompilationLog;
-use Modules\Student\Entities\Student;
-use Carbon\Carbon;
+use Modules\Result\Entities\StudentSemesterGpa;
 
 class ResultComputationService
 {
     /**
      * Compile results for a specific session, semester, and level
      */
-    public function compileResults($sessionId, $semester, $levelId, $programmeId = null, $departmentId = null, $compiledBy = null)
+    public function compileResults($sessionId, $semester, $levelId, $programmeId = null, $programmeCurriculumId = null, $departmentId = null, $compiledBy = null)
     {
         $startTime = now();
 
@@ -28,6 +28,7 @@ class ResultComputationService
             'semester' => $semester,
             'level_id' => $levelId,
             'programme_id' => $programmeId,
+            'programme_curriculum_id' => $programmeCurriculumId,
             'department_id' => $departmentId,
             'compilation_type' => 'semester',
             'status' => 'processing',
@@ -46,14 +47,14 @@ class ResultComputationService
             DB::beginTransaction();
 
             // Get all students registered for courses in this session/semester/level
-            $studentsQuery = StudentCourseRegistration::with(['student', 'course'])
+            $studentsQuery = ModelsStudentCourseRegistration::with(['student', 'course'])
                 ->where('session_id', $sessionId)
                 ->where('semester', $semester)
                 ->where('level_id', $levelId);
 
             if ($programmeId) {
-                $studentsQuery->whereHas('student', function ($q) use ($programmeId) {
-                    $q->where('programme_id', $programmeId);
+                $studentsQuery->whereHas('student', function ($q) use ($programmeCurriculumId) {
+                    $q->where('programme_curriculum_id', $programmeCurriculumId);
                 });
             }
 
@@ -88,6 +89,7 @@ class ResultComputationService
                         array_merge($gpaData, [
                             'level_id' => $levelId,
                             'programme_id' => $student->programme_id,
+                            'programme_curriculum_id' => $student->programme_curriculum_id,
                             'is_compiled' => true,
                             'compiled_at' => now(),
                             'compiled_by' => $compiledBy
@@ -273,7 +275,7 @@ class ResultComputationService
      */
     public function generateResultToken($sessionId, $semester, $courseCode)
     {
-        $session = \Modules\Staff\Entities\Session::find($sessionId);
+        $session = Session::find($sessionId);
         $sessionName = str_replace('/', '-', $session->name);
 
         return "{$sessionName}-{$semester}-{$courseCode}";

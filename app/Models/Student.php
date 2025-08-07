@@ -13,22 +13,23 @@ use Carbon\Carbon;
 use EloquentFilter\Filterable;
 use Illuminate\Support\Facades\DB;
 use ProgrammeOptions;
+// Import will be added when ProgrammeCurriculum model is used
 
 class Student extends Authenticatable
 {
 
     use HasFactory, Utils, HasApiTokens, SoftDeletes, HasWallet,Filterable;
 
-    protected $fillable = ['*'];
+    protected $fillable = [ "first_name", "middle_name", "surname", "phone_number", "gender", "email", "matric_number", "application_id", "entry_session_id", "lga_id", "country_id", "state_id", "applied_level_id", "applied_programme_curriculum_id", "programme_type_id","programme_curriculum_id", "programme_id", "programme_option_id", "level_id", "entry_level_id", "mode_of_entry_id", "department_id", "faculty_id", "wallet_number", "date_of_birth", "years_of_experience", "working_class", "category", "present_address", "permanent_address", "guardian_full_name", "guardian_phone_number", "guardian_address", "guardian_email", "guardian_relationship", "sponsor_full_name", "sponsor_type", "sponsor_address", "next_of_kin_full_name", "next_of_kin_address", "next_of_kin_phone_number", "next_of_kin_relationship", "prev_institution", "prev_year_of_graduation", "health_status", "health_status_description", "blood_group", "disability", "religion", "marital_status", "logged_in_time", "logged_in_count", "picture", "signature", "batch_id", "deleted_at", "deleted_by", "updated_by", "password", "promote_count", "status"];
     protected $with = ['statuses'];
     public static bool $withoutAppends = false;
     public function __construct()
     {
-        if (self::$withoutAppends) {            
-            $this->appends = [];           
+        if (self::$withoutAppends) {
+            $this->appends = [];
         }
     }
-    
+
     public function modelFilter()
     {
         return $this->provideFilter(\App\ModelFilters\StudentFilter::class);
@@ -70,6 +71,11 @@ class Student extends Authenticatable
 
     public function programme(){
         return $this->belongsTo(Programme::class);
+    }
+
+    public function programmeCurriculum()
+    {
+        return $this->belongsTo(ProgrammeCurriculum::class, 'programme_curriculum_id');
     }
 
     public function entryMode(){
@@ -135,7 +141,7 @@ class Student extends Authenticatable
     }
 
     public function getYearOfGraduationAttribute() {
-        $programme = Programme::find($this->programme_id);
+        $programme = ProgrammeCurriculum::find($this->programme_curriculum_id);
         $session = Session::find($this->entry_session_id);
         if(!is_null($programme)){
             $sessions =  explode('/',$session?->name);
@@ -178,7 +184,7 @@ class Student extends Authenticatable
 
     public function getGraduationLevelIdAttribute()
     {
-        return Programme::find($this->programme_id)?->graduation_level_id;            
+        return ProgrammeCurriculum::find($this->programme_curriculum_id)?->graduation_level_id;
     }
 
     public function scopeSearch($query, $search)
@@ -190,16 +196,16 @@ class Student extends Authenticatable
                 ->orWhere('phone_number', 'like', '%' . $search . '%')
                 ->orWhere('gender', 'like', '%' . $search . '%')
                 ->orWhere('email', 'like', '%' . $search . '%')
-                ->orWhere('matric_number', 'like', '%' . $search . '%');                                
+                ->orWhere('matric_number', 'like', '%' . $search . '%');
         }
     }
 
     public function getProgrammeMaxDurationAttribute(){
-        return Programme::find($this->programme_id)?->max_duration;            
+        return ProgrammeCurriculum::find($this->programme_curriculum_id)?->max_duration;
     }
 
     public function getNumberOfCarryOverAttribute(){
-        return StudentCoursesGrades::where(['student_id'=>$this->id, 'status'=>'failed'])->count();            
+        return StudentCoursesGrades::where(['student_id'=>$this->id, 'status'=>'failed'])->count();
     }
 
     public function getOcCountAttribute()
@@ -245,9 +251,9 @@ class Student extends Authenticatable
 
     public function getProgrammeOptionAttribute()
     {
-        return ProgrammeOption::find($this->programme_option_id);   
+        return ProgrammeOption::find($this->programme_option_id);
     }
-    
+
     public function statuses(){
         return $this->hasMany(StudentStatus::class);
     }
@@ -257,7 +263,7 @@ class Student extends Authenticatable
     }
 
     public function getAllowTpAttribute(){
-        $programme = Programme::find($this->programme_id);        
+        $programme = Programme::find($this->programme_id);
         if($this->getAttribute('oc_count') > $programme?->tp_max_carry_over){
             return false;
         }
